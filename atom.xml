@@ -4,7 +4,7 @@
   <title><![CDATA[Shadynasty Business]]></title>
   <link href="http://shadynasty.biz/atom.xml" rel="self"/>
   <link href="http://shadynasty.biz/"/>
-  <updated>2012-07-30T12:26:36-04:00</updated>
+  <updated>2012-07-30T15:50:17-04:00</updated>
   <id>http://shadynasty.biz/</id>
   <author>
     <name><![CDATA[Jeff Wendling]]></name>
@@ -14,15 +14,31 @@
 
   
   <entry>
-    <title type="html"><![CDATA[First post]]></title>
+    <title type="html"><![CDATA[Quick doens't have to mean dirty]]></title>
     <link href="http://shadynasty.biz/blog/2012/07/30/first-post/"/>
     <updated>2012-07-30T11:43:00-04:00</updated>
     <id>http://shadynasty.biz/blog/2012/07/30/first-post</id>
-    <content type="html"><![CDATA[<h1>What what</h1>
+    <content type="html"><![CDATA[<p>After reading the wonderful article whose title I stole about making
+a guestbook app in Flask, I decided to see how it would compare to my
+favorite language of the year, Go. So here&#8217;s my take.</p>
 
-<p>Hello there.</p>
+<h2>First Steps</h2>
 
-<figure class='code'><figcaption><span>Time to be Awesome - awesome.go </span></figcaption>
+<p>Let&#8217;s create a new directory to hold the project. I&#8217;m gonna host the code on
+github so let&#8217;s make the local directory match the import path.</p>
+
+<pre><code>sigma:~ zeebo$ cd ~/Code/go/src
+sigma:src zeebo$ mkdir -p github.com/zeebo/gostbook
+sigma:src zeebo$ cd github.com/zeebo/gostbook/
+sigma:gostbook zeebo$ git init
+Initialized empty Git repository in /Users/zeebo/Code/go/src/github.com/zeebo/gostbook/.git/
+</code></pre>
+
+<p>Note that <code>~/Code/go</code> is a directory in my GOPATH environment variable, the only
+piece of configuration I need to do to have the build tool know how to fetch and
+build any code that uses these conventions. Lets put in a little hello world code.</p>
+
+<figure class='code'><figcaption><span>Hello World - main.go </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -30,15 +46,815 @@
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
 </pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">import</span> <span class="s">&quot;fmt&quot;</span>
+</span><span class='line'><span class="k">import</span> <span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;fmt&quot;</span>
+</span><span class='line'>  <span class="s">&quot;net/http&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">hello</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">fmt</span><span class="p">.</span><span class="n">Fprintln</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="s">&quot;Hello World!&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
 </span><span class='line'><span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>  <span class="n">fmt</span><span class="p">.</span><span class="n">Println</span><span class="p">(</span><span class="s">&quot;Hello World!&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">http</span><span class="p">.</span><span class="n">HandleFunc</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">,</span> <span class="n">hello</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">http</span><span class="p">.</span><span class="n">ListenAndServe</span><span class="p">(</span><span class="s">&quot;:8080&quot;</span><span class="p">,</span> <span class="n">nil</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">panic</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
+
+<p>This registers a handler that will match any path and write
+<code>Hello World!</code> in the response. Building and running this code
+runs a server that listens on port 8080, so lets visit it.</p>
+
+<pre><code>sigma:gostbook zeebo$ go build
+sigma:gostbook zeebo$ ./gostbook &amp;
+[1] 39629
+sigma:gostbook zeebo$ curl localhost:8080
+Hello World!
+sigma:gostbook zeebo$ kill 39629
+</code></pre>
+
+<p>Neat!</p>
+
+<h2>Commit</h2>
+
+<p>Let&#8217;s do our source control duty, and make a commit with our super simple
+app.</p>
+
+<pre><code>sigma:gostbook zeebo$ cat .gitignore 
+*
+!.gitignore
+!*.go
+!*.html
+sigma:gostbook zeebo$ git status
+# On branch master
+#
+# Initial commit
+#
+# Untracked files:
+#   (use "git add &lt;file&gt;..." to include in what will be committed)
+#
+#   .gitignore
+#   main.go
+nothing added to commit but untracked files present (use "git add" to track)
+sigma:gostbook zeebo$ git add .
+sigma:gostbook zeebo$ git commit -m 'initial commit'
+[master (root-commit) de0b184] initial commit
+ 2 files changed, 21 insertions(+)
+ create mode 100644 .gitignore
+ create mode 100644 main.go
+</code></pre>
+
+<h2>Templates</h2>
+
+<p>The next step is to put templates in. Lets make a template directory
+and some basic templates in there. I&#8217;ll steal the templates from
+Eevee&#8217;s post and change them to use the built in <code>html/template</code> package
+from the standard library. Here&#8217;s the source:</p>
+
+<figure class='code'><figcaption><span>templates/_base.html </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!DOCTYPE html&gt;</span>
+</span><span class='line'><span class="nt">&lt;html</span> <span class="na">lang=</span><span class="s">&quot;en&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;head&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;title&gt;</span>{{ template &quot;title&quot; . }}<span class="nt">&lt;/title&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/head&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;body&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;section</span> <span class="na">id=</span><span class="s">&quot;contents&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>            {{ template &quot;content&quot; . }}
+</span><span class='line'>        <span class="nt">&lt;/section&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;footer</span> <span class="na">id=</span><span class="s">&quot;footer&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>            My Cool Guestbook 2000 © me forever
+</span><span class='line'>        <span class="nt">&lt;/footer&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>templates/index.html </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'>{{ define &quot;title&quot; }}Guestbook{{ end }}
+</span><span class='line'>
+</span><span class='line'>{{ define &quot;content&quot; }}
+</span><span class='line'>    <span class="nt">&lt;h1&gt;</span>Guestbook<span class="nt">&lt;/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;p&gt;</span>Hello, and welcome to my guestbook, because it&#39;s 1997!<span class="nt">&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;ul</span> <span class="na">class=</span><span class="s">&quot;guests&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;li&gt;</span>...<span class="nt">&lt;/li&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/ul&gt;</span>
+</span><span class='line'>{{ end }}
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Updating the Go code is a little more work, but not much.</p>
+
+<figure class='code'><figcaption><span>Template World - main.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">import</span> <span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;html/template&quot;</span>
+</span><span class='line'>  <span class="s">&quot;net/http&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">var</span> <span class="n">index</span> <span class="p">=</span> <span class="n">template</span><span class="p">.</span><span class="n">Must</span><span class="p">(</span><span class="n">template</span><span class="p">.</span><span class="n">ParseFiles</span><span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;templates/_base.html&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s">&quot;templates/index.html&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">hello</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">index</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">nil</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Building and running again, we see it&#8217;s working:</p>
+
+<pre><code>sigma:gostbook zeebo$ go build
+sigma:gostbook zeebo$ ./gostbook &amp;
+[1] 39918
+sigma:gostbook zeebo$ curl localhost:8080
+&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+    &lt;head&gt;
+        &lt;title&gt;Guestbook&lt;/title&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;section id="content"&gt;
+
+    &lt;h1&gt;Guestbook&lt;/h1&gt;
+
+    &lt;p&gt;Hello, and welcome to my guestbook, because it's 1997!&lt;/p&gt;
+
+    &lt;ul class="guests"&gt;
+        &lt;li&gt;...&lt;/li&gt;
+    &lt;/ul&gt;
+
+        &lt;/section&gt;
+        &lt;footer id="footer"&gt;
+            My Cool Guestbook 2000 © me forever
+        &lt;/footer&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+sigma:gostbook zeebo$ kill 39918
+</code></pre>
+
+<p>Let&#8217;s be diligent and make another commit. On to data!</p>
+
+<h2>Databases</h2>
+
+<p>Go has many database bindings but the one I find easiest to work with
+would be MongoDB with the excellent mgo driver. Let&#8217;s create our data
+model.</p>
+
+<figure class='code'><figcaption><span>Database entry - entry.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">import</span> <span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;labix.org/v2/mgo/bson&quot;</span>
+</span><span class='line'>  <span class="s">&quot;time&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">type</span> <span class="n">Entry</span> <span class="k">struct</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">ID</span>        <span class="n">bson</span><span class="p">.</span><span class="n">ObjectId</span> <span class="s">`bson:&quot;_id,omitempty&quot;`</span>
+</span><span class='line'>  <span class="n">Timestamp</span> <span class="n">time</span><span class="p">.</span><span class="n">Time</span>
+</span><span class='line'>  <span class="n">Name</span>      <span class="nb">string</span>
+</span><span class='line'>  <span class="n">Message</span>   <span class="nb">string</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">NewEntry</span><span class="p">()</span> <span class="p">*</span><span class="n">Entry</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">&amp;</span><span class="n">Entry</span><span class="p">{</span>
+</span><span class='line'>      <span class="n">Timestamp</span><span class="p">:</span> <span class="n">time</span><span class="p">.</span><span class="n">Now</span><span class="p">(),</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We just create a struct with some fields, and for the ID field add some
+tags to it to instruct bson to omit it if the value is empty, and name it
+<code>_id</code> when serializing. We also provide a <code>NewEntry</code> function for creating
+an Entry at the current time.</p>
+
+<p>Now lets add support to the handler.</p>
+
+<figure class='code'><figcaption><span>Databased up - main.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">func</span> <span class="n">hello</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//grab a clone of the session and close it when the</span>
+</span><span class='line'>  <span class="c1">//function returns</span>
+</span><span class='line'>  <span class="n">s</span> <span class="p">:=</span> <span class="n">session</span><span class="p">.</span><span class="n">Clone</span><span class="p">()</span>
+</span><span class='line'>  <span class="k">defer</span> <span class="n">s</span><span class="p">.</span><span class="n">Close</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//set up the collection and query</span>
+</span><span class='line'>  <span class="n">coll</span> <span class="p">:=</span> <span class="n">s</span><span class="p">.</span><span class="n">DB</span><span class="p">(</span><span class="s">&quot;gostbook&quot;</span><span class="p">).</span><span class="n">C</span><span class="p">(</span><span class="s">&quot;entries&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">query</span> <span class="p">:=</span> <span class="n">coll</span><span class="p">.</span><span class="n">Find</span><span class="p">(</span><span class="n">nil</span><span class="p">).</span><span class="n">Sort</span><span class="p">(</span><span class="s">&quot;-timestamp&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//execute the query</span>
+</span><span class='line'>  <span class="c1">//TODO: add pagination :)</span>
+</span><span class='line'>  <span class="k">var</span> <span class="n">entries</span> <span class="p">[]</span><span class="n">Entry</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">query</span><span class="p">.</span><span class="n">All</span><span class="p">(&amp;</span><span class="n">entries</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//execute the template</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">index</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">entries</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">var</span> <span class="n">session</span> <span class="p">*</span><span class="n">mgo</span><span class="p">.</span><span class="n">Session</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">var</span> <span class="n">err</span> <span class="n">error</span>
+</span><span class='line'>  <span class="n">session</span><span class="p">,</span> <span class="n">err</span> <span class="p">=</span> <span class="n">mgo</span><span class="p">.</span><span class="n">Dial</span><span class="p">(</span><span class="s">&quot;localhost&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">panic</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">http</span><span class="p">.</span><span class="n">HandleFunc</span><span class="p">(</span><span class="s">&quot;/&quot;</span><span class="p">,</span> <span class="n">hello</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">=</span> <span class="n">http</span><span class="p">.</span><span class="n">ListenAndServe</span><span class="p">(</span><span class="s">&quot;:8080&quot;</span><span class="p">,</span> <span class="n">nil</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">panic</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Interacting with the databse requires a little boilerplate in the handler,
+but this can easily be removed by clever use of Go&#8217;s interfaces. The <code>net/http</code>
+package will serve anything with a <code>ServeHTTP(ResponseWriter, *Request)</code> method,
+so you can decorate handlers by wrapping them in simple types that implement
+that interface. Doing that is left as an exercise to the reader :)</p>
+
+<p>Here&#8217;s how we change the template:</p>
+
+<figure class='code'><figcaption><span>templates/index.html </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'>    <span class="nt">&lt;ul</span> <span class="na">class=</span><span class="s">&quot;guests&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        {{ range . }}
+</span><span class='line'>        <span class="nt">&lt;li&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;blockquote&gt;</span>{{ .Message }}<span class="nt">&lt;/blockquote&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;p&gt;</span>- <span class="nt">&lt;cite&gt;</span>{{ .Name }}<span class="nt">&lt;/cite&gt;</span>, <span class="nt">&lt;time&gt;</span>{{ .Timestamp }}<span class="nt">&lt;/time&gt;&lt;/p&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;/li&gt;</span>
+</span><span class='line'>        {{ end }}
+</span><span class='line'>    <span class="nt">&lt;/ul&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Notice we don&#8217;t worry about any kind of injection. The <code>html/template</code> package
+is super awesome and handles that by knowing what it&#8217;s outputing and the context
+in which the data is being used. If you&#8217;re in an html context, it will escape
+the html properly. If you&#8217;re in a script or url context, it knows and will apply
+the appropriate esacping. No modifying the data in the database. No &#8220;sanitizing&#8221;.
+Just doing the right thing, every time.</p>
+
+<h2>Signing it</h2>
+
+<p>Time to add the handler to sign the guest book. Let&#8217;s start with the html for
+the form.</p>
+
+<figure class='code'><figcaption><span>templates/index.html </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'>    <span class="nt">&lt;hr&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;form</span> <span class="na">action=</span><span class="s">&quot;/sign&quot;</span> <span class="na">method=</span><span class="s">&quot;POST&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;p&gt;</span>Name: <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">name=</span><span class="s">&quot;name&quot;</span><span class="nt">&gt;&lt;/p&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;p&gt;</span>Message: <span class="nt">&lt;textarea</span> <span class="na">name=</span><span class="s">&quot;message&quot;</span> <span class="na">rows=</span><span class="s">&quot;10&quot;</span> <span class="na">cols=</span><span class="s">&quot;40&quot;</span><span class="nt">&gt;&lt;/textarea&gt;&lt;/p&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;p&gt;&lt;button&gt;</span>Sign<span class="nt">&lt;/button&gt;&lt;/p&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/form&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And now the handler:</p>
+
+<figure class='code'><figcaption><span>sign.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">import</span> <span class="s">&quot;net/http&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">sign</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//make sure we got post</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">req</span><span class="p">.</span><span class="n">Method</span> <span class="p">!=</span> <span class="s">&quot;POST&quot;</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">NotFound</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">req</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">entry</span> <span class="p">:=</span> <span class="n">NewEntry</span><span class="p">()</span>
+</span><span class='line'>  <span class="n">entry</span><span class="p">.</span><span class="n">Name</span> <span class="p">=</span> <span class="n">req</span><span class="p">.</span><span class="n">FormValue</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">entry</span><span class="p">.</span><span class="n">Message</span> <span class="p">=</span> <span class="n">req</span><span class="p">.</span><span class="n">FormValue</span><span class="p">(</span><span class="s">&quot;message&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="n">entry</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="s">&quot;&quot;</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">entry</span><span class="p">.</span><span class="n">Name</span> <span class="p">=</span> <span class="s">&quot;Some dummy who forgot a name&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">entry</span><span class="p">.</span><span class="n">Message</span> <span class="p">==</span> <span class="s">&quot;&quot;</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">entry</span><span class="p">.</span><span class="n">Message</span> <span class="p">=</span> <span class="s">&quot;Some dummy who forgot a message.&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">s</span> <span class="p">:=</span> <span class="n">session</span><span class="p">.</span><span class="n">Clone</span><span class="p">()</span>
+</span><span class='line'>  <span class="k">defer</span> <span class="n">s</span><span class="p">.</span><span class="n">Close</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">coll</span> <span class="p">:=</span> <span class="n">s</span><span class="p">.</span><span class="n">DB</span><span class="p">(</span><span class="s">&quot;gostbook&quot;</span><span class="p">).</span><span class="n">C</span><span class="p">(</span><span class="s">&quot;entries&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">coll</span><span class="p">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">entry</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">http</span><span class="p">.</span><span class="n">Redirect</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="s">&quot;/&quot;</span><span class="p">,</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusTemporaryRedirect</span><span class="p">)</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>All we need to do is add a single line to main.go to make it handle the new
+handler:</p>
+
+<pre><code>http.HandleFunc("/sign", sign)
+</code></pre>
+
+<p>And we can sign, and view our guestbook. Lets commit again.</p>
+
+<h2>Some issues</h2>
+
+<p>Now the astute reader will notice a couple little pain points.</p>
+
+<ul>
+<li><p>We had to check in the <code>sign</code> handler if the method was <code>POST</code>. This can
+be fixed by using a more sophisticated muxer than the built in one in <code>net/http</code>.
+Like all good packages in Go, all of these things are just interfaces and so you
+can swap them out with many community driven packages. An exellent one is the
+gorilla muxer at <code>code.google.com/p/gorilla/mux</code>.</p></li>
+<li><p>We had to hard code the urls. Once again, this is solved by using a more
+sophisticated muxer. <code>code.google.com/p/gorilla/mux</code> supports building urls
+from names you give to the routes.</p></li>
+<li><p>Boilerplate in the handlers to specify a database/collection every time.
+I typically solve this how I wrote earlier by making a type that implements
+the <code>ServeHTTP</code> method and passes in a request context containing everything
+I need to use for that request, including sessions and database connections.
+It&#8217;s only a couple lines of code to make, but outside the scope of this
+post.</p></li>
+</ul>
+
+
+<p>Other than that, I found it to be pretty painless and about as easy to do as
+the Flask version. Considering this is a statically typed compiled language,
+that&#8217;s quite the feat.</p>
+
+<h2>Deployment</h2>
+
+<p>It wouldn&#8217;t be useful if it wasn&#8217;t deployed. Fortunately, Go compiles down into
+a static binary. This can be shipped to any system that it was compiled for, and
+just ran. Go also allows you to easily cross compile for any system, so thats a
+non-issue as well. The built in web server is comparable in performance to things
+like Apache and nginx from my tests. So for most cases, it&#8217;s as simple as running
+a binary and either proxy passing it through from your front end server, or just
+letting the world hit it directly.</p>
+
+<p>But, since that&#8217;s not cool enough, we&#8217;re also going to deploy on Heroku.</p>
+
+<h2>Buildpacks and a Note About Getting Code</h2>
+
+<p>Unfortunately, Go isn&#8217;t a supported platform on Heroku. Fortunately, it&#8217;s just
+a buildpack away. The Cedar stack is excellent and allows you to run any binary
+you want to host your web site, so we just have to tell Heroku how to build our
+code. I&#8217;m a little biased so I&#8217;m going to use the buildpack I created to do this,
+although there are alternatives.</p>
+
+<p>The cool part about hosting our code on github is that anyone with Go installed
+can just grab it with a single command:</p>
+
+<pre><code>go get github.com/zeebo/gostbook
+</code></pre>
+
+<p>That will download, compile, and install a binary named &#8220;gostbook&#8221; in our bin
+directory in our GOPATH. The buildpack I created uses this to build the code
+we&#8217;ll be deploying. First we make a little file that describes how to do it,
+and a Procfile to describe what to run:</p>
+
+<figure class='code'><figcaption><span>.heroku </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>BASE=github.com/zeebo/gostbook
+</span><span class='line'>+ github.com/zeebo/gostbook</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Procfile </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>web: bin/gostbook</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then we have to be nice and listen on the port Heroku tells us to. This is
+a one line change:</p>
+
+<pre><code>if err = http.ListenAndServe(":"+os.Getenv("PORT"), nil); err != nil {
+</code></pre>
+
+<p>Lastly, we have to dail out to the mongo config they ask too:</p>
+
+<pre><code>session, err = mgo.Dial(os.Getenv("DATABASE_URL"))
+</code></pre>
+
+<p>I use <code>DATABASE_URL</code> as the key. We&#8217;ll have to set it later in the deployment.
+Let&#8217;s commit that.</p>
+
+<h2>Deployment (again)</h2>
+
+<p>Lets create the heroku app.</p>
+
+<pre><code>sigma:gostbook zeebo$ heroku create --stack cedar --buildpack http://github.com/zeebo/buildpack.git
+Creating tranquil-refuge-9104... done, stack is cedar
+http://tranquil-refuge-9104.herokuapp.com/ | git@heroku.com:tranquil-refuge-9104.git
+Git remote heroku added
+</code></pre>
+
+<p>Add in a free mongo database and configure the <code>DATABASE_URL</code>:</p>
+
+<pre><code>sigma:gostbook zeebo$ heroku addons:add mongolab:starter
+-----&gt; Adding mongolab:starter to tranquil-refuge-9104... done, v3 (free)
+       Welcome to MongoLab.
+sigma:gostbook zeebo$ heroku config
+BUILDPACK_URL =&gt; http://github.com/zeebo/buildpack.git
+MONGOLAB_URI  =&gt; ...snip...
+sigma:gostbook zeebo$ heroku config:add DATABASE_URL=...snip...
+Adding config vars and restarting app... done, v4
+  DATABASE_URL =&gt; ...snip...
+</code></pre>
+
+<p>If I was smarter, I would have just used <code>MONGOLAB_URI</code> in the code, but I&#8217;m not
+so here we are. Finally, we can just push it up and watch the magic:</p>
+
+<pre><code>sigma:gostbook zeebo$ git push heroku master
+Counting objects: 24, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (21/21), done.
+Writing objects: 100% (24/24), 3.41 KiB, done.
+Total 24 (delta 4), reused 0 (delta 0)
+
+-----&gt; Heroku receiving push
+-----&gt; Fetching custom buildpack... done
+-----&gt; Go app detected
+-----&gt; Configuration
+       GO_VERSION=go1.0.2
+       BASE=github.com/zeebo/gostbook
+       + github.com/zeebo/gostbook
+-----&gt; Using Go go1.0.2.linux-amd64
+-----&gt; Fetching Go go1.0.2.linux-amd64
+-----&gt; Checking for Mercurial and Bazaar
+       Fetching hg and bzr
+       ..snip...
+       Successfully installed mercurial
+       ...snip...
+       Successfully installed bzr
+       Cleaning up...
+-----&gt; Running go get -u -v all
+-----&gt; Copying sources into GOPATH/src/github.com/zeebo/gostbook
+-----&gt; Running go get -v github.com/zeebo/gostbook
+       Fetching https://labix.org/v2/mgo?go-get=1
+       Parsing meta tags from https://labix.org/v2/mgo?go-get=1 (status code 200)
+       get "labix.org/v2/mgo": found meta tag main.metaImport{Prefix:"labix.org/v2/mgo", VCS:"bzr", RepoRoot:"https://launchpad.net/mgo/v2"} at https://labix.org/v2/mgo?go-get=1
+       labix.org/v2/mgo (download)
+       Fetching https://labix.org/v2/mgo/bson?go-get=1
+       Parsing meta tags from https://labix.org/v2/mgo/bson?go-get=1 (status code 200)
+       get "labix.org/v2/mgo/bson": found meta tag main.metaImport{Prefix:"labix.org/v2/mgo", VCS:"bzr", RepoRoot:"https://launchpad.net/mgo/v2"} at https://labix.org/v2/mgo/bson?go-get=1
+       get "labix.org/v2/mgo/bson": verifying non-authoritative meta tag
+       Fetching https://labix.org/v2/mgo?go-get=1
+       Parsing meta tags from https://labix.org/v2/mgo?go-get=1 (status code 200)
+       labix.org/v2/mgo/bson
+       labix.org/v2/mgo
+       github.com/zeebo/gostbook
+-----&gt; Discovering process types
+       Procfile declares types -&gt; web
+-----&gt; Compiled slug size is 1.4MB
+-----&gt; Launching... done, v6
+       http://tranquil-refuge-9104.herokuapp.com deployed to Heroku
+
+To git@heroku.com:tranquil-refuge-9104.git
+ * [new branch]      master -&gt; master
+</code></pre>
+
+<p>And we have a nice guestbook at http://tranquil-refuge-9104.herokuapp.com</p>
+
+<h2>A snag</h2>
+
+<p>It seems like the database name is specified by the host in this case. We can&#8217;t
+just go and create whatever database we want. So we have to update the code to
+grab this information and use it when we&#8217;re making queries. The patch to fix it
+was pretty easy. Just add a global variable and parse the URL to put the database
+into it.</p>
+
+<figure class='code'><figcaption><span>commit.diff </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+</pre></td><td class='code'><pre><code class='diff'><span class='line'><span class="gh">diff --git a/main.go b/main.go</span>
+</span><span class='line'><span class="gh">index 6094df8..eea1565 100644</span>
+</span><span class='line'><span class="gd">--- a/main.go</span>
+</span><span class='line'><span class="gi">+++ b/main.go</span>
+</span><span class='line'><span class="gu">@@ -4,6 +4,7 @@ import (</span>
+</span><span class='line'>  &quot;html/template&quot;
+</span><span class='line'>  &quot;labix.org/v2/mgo&quot;
+</span><span class='line'>  &quot;net/http&quot;
+</span><span class='line'><span class="gi">+    &quot;net/url&quot;</span>
+</span><span class='line'>  &quot;os&quot;
+</span><span class='line'> )
+</span><span class='line'>
+</span><span class='line'><span class="gu">@@ -19,7 +20,7 @@ func hello(w http.ResponseWriter, req *http.Request) {</span>
+</span><span class='line'>  defer s.Close()
+</span><span class='line'>
+</span><span class='line'>  //set up the collection and query
+</span><span class='line'><span class="gd">-    coll := s.DB(&quot;gostbook&quot;).C(&quot;entries&quot;)</span>
+</span><span class='line'><span class="gi">+    coll := s.DB(database).C(&quot;entries&quot;)</span>
+</span><span class='line'>  query := coll.Find(nil).Sort(&quot;-timestamp&quot;)
+</span><span class='line'>
+</span><span class='line'>  //execute the query
+</span><span class='line'><span class="gu">@@ -38,10 +39,17 @@ func hello(w http.ResponseWriter, req *http.Request) {</span>
+</span><span class='line'> }
+</span><span class='line'>
+</span><span class='line'> var session *mgo.Session
+</span><span class='line'><span class="gi">+var database string</span>
+</span><span class='line'>
+</span><span class='line'> func main() {
+</span><span class='line'>  var err error
+</span><span class='line'><span class="gd">-    session, err = mgo.Dial(os.Getenv(&quot;DATABASE_URL&quot;))</span>
+</span><span class='line'><span class="gi">+    u := os.Getenv(&quot;DATABASE_URL&quot;)</span>
+</span><span class='line'><span class="gi">+    parsed, err := url.Parse(u)</span>
+</span><span class='line'><span class="gi">+    if err != nil {</span>
+</span><span class='line'><span class="gi">+        panic(err)</span>
+</span><span class='line'><span class="gi">+    }</span>
+</span><span class='line'><span class="gi">+    database = parsed.Path[1:]</span>
+</span><span class='line'><span class="gi">+    session, err = mgo.Dial(u)</span>
+</span><span class='line'>  if err != nil {
+</span><span class='line'>      panic(err)
+</span><span class='line'>  }
+</span><span class='line'><span class="gh">diff --git a/sign.go b/sign.go</span>
+</span><span class='line'><span class="gh">index a5b6cd0..c3ddbda 100644</span>
+</span><span class='line'><span class="gd">--- a/sign.go</span>
+</span><span class='line'><span class="gi">+++ b/sign.go</span>
+</span><span class='line'><span class="gu">@@ -23,7 +23,7 @@ func sign(w http.ResponseWriter, req *http.Request) {</span>
+</span><span class='line'>  s := session.Clone()
+</span><span class='line'>  defer s.Close()
+</span><span class='line'>
+</span><span class='line'><span class="gd">-    coll := s.DB(&quot;gostbook&quot;).C(&quot;entries&quot;)</span>
+</span><span class='line'><span class="gi">+    coll := s.DB(database).C(&quot;entries&quot;)</span>
+</span><span class='line'>  if err := coll.Insert(entry); err != nil {
+</span><span class='line'>      http.Error(w, err.Error(), http.StatusInternalServerError)
+</span><span class='line'>      return
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We just rely on the <code>net/url</code> package to parse the url and grab the database
+out of the path argument. Since the path contains the leading forward slash, we
+just slice that off. All thats left is a redeploy:</p>
+
+<pre><code>sigma:gostbook zeebo$ git add .
+sigma:gostbook zeebo$ git commit -m 'fixes for database'
+[master 2b4bf78] fixes for database
+ 2 files changed, 11 insertions(+), 3 deletions(-)
+sigma:gostbook zeebo$ git push heroku master
+Counting objects: 7, done.
+Delta compression using up to 4 threads.
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (4/4), 493 bytes, done.
+Total 4 (delta 3), reused 0 (delta 0)
+
+-----&gt; Heroku receiving push
+-----&gt; Fetching custom buildpack... done
+-----&gt; Go app detected
+-----&gt; Configuration
+       GO_VERSION=go1.0.2
+       BASE=github.com/zeebo/gostbook
+       + github.com/zeebo/gostbook
+-----&gt; Using Go go1.0.2.linux-amd64
+-----&gt; Checking for Mercurial and Bazaar
+       /app/tmp/repo.git/.cache/venv/bin/hg
+       /app/tmp/repo.git/.cache/venv/bin/bzr
+-----&gt; Running go get -u -v all
+-----&gt; Copying sources into GOPATH/src/github.com/zeebo/gostbook
+-----&gt; Running go get -v github.com/zeebo/gostbook
+       github.com/zeebo/gostbook
+-----&gt; Discovering process types
+       Procfile declares types -&gt; web
+-----&gt; Compiled slug size is 1.4MB
+-----&gt; Launching... done, v7
+       http://tranquil-refuge-9104.herokuapp.com deployed to Heroku
+
+To git@heroku.com:tranquil-refuge-9104.git
+   52a2171..2b4bf78  master -&gt; master
+</code></pre>
+
+<p>And to my surprise, it worked on the second try!</p>
+
+<h2>Closing remarks</h2>
+
+<p>Dunno. Welp. Go is neat.</p>
 ]]></content>
   </entry>
   
