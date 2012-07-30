@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Quick doens't have to mean dirty"
+title: "Quick doesn't have to mean dirty"
 date: 2012-07-30 11:43
 comments: true
 categories: 
