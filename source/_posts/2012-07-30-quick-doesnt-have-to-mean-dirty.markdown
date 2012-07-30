@@ -10,6 +10,8 @@ After reading the wonderful article whose title I stole about making
 a guestbook app in Flask, I decided to see how it would compare to my
 favorite language of the year, Go. So here's my take.
 
+<!-- more -->
+
 ## First Steps
 
 Let's create a new directory to hold the project. I'm gonna host the code on
