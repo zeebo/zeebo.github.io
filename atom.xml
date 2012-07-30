@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[My Octopress Blog]]></title>
-  <link href="http://zeebo.github.com/atom.xml" rel="self"/>
-  <link href="http://zeebo.github.com/"/>
-  <updated>2012-07-30T12:08:42-04:00</updated>
-  <id>http://zeebo.github.com/</id>
+  <title><![CDATA[Shadynasty Business]]></title>
+  <link href="http://shadynasty.biz/atom.xml" rel="self"/>
+  <link href="http://shadynasty.biz/"/>
+  <updated>2012-07-30T12:26:36-04:00</updated>
+  <id>http://shadynasty.biz/</id>
   <author>
     <name><![CDATA[Jeff Wendling]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[First post]]></title>
-    <link href="http://zeebo.github.com/blog/2012/07/30/first-post/"/>
+    <link href="http://shadynasty.biz/blog/2012/07/30/first-post/"/>
     <updated>2012-07-30T11:43:00-04:00</updated>
-    <id>http://zeebo.github.com/blog/2012/07/30/first-post</id>
+    <id>http://shadynasty.biz/blog/2012/07/30/first-post</id>
     <content type="html"><![CDATA[<h1>What what</h1>
 
 <p>Hello there.</p>
