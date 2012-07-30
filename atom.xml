@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[My Octopress Blog]]></title>
+  <link href="http://zeebo.github.com/atom.xml" rel="self"/>
+  <link href="http://zeebo.github.com/"/>
+  <updated>2012-07-30T11:58:19-04:00</updated>
+  <id>http://zeebo.github.com/</id>
+  <author>
+    <name><![CDATA[Jeff Wendling]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[First post]]></title>
+    <link href="http://zeebo.github.com/blog/2012/07/30/first-post/"/>
+    <updated>2012-07-30T11:43:00-04:00</updated>
+    <id>http://zeebo.github.com/blog/2012/07/30/first-post</id>
+    <content type="html"><![CDATA[<h1>What what</h1>
+
+<p>Hello there.</p>
+
+<figure class='code'><figcaption><span>Time to be Awesome - awesome.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">import</span> <span class="s">&quot;fmt&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">fmt</span><span class="p">.</span><span class="n">Println</span><span class="p">(</span><span class="s">&quot;Hello World!&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+</feed>
