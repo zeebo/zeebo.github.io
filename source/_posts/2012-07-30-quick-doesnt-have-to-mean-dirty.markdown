@@ -598,4 +598,10 @@ And to my surprise, it worked on the second try!
 
 ## Closing remarks
 
-Dunno. Welp. Go is neat.
+I hope this post showed some of what can be done with Go. In little time and
+code I was able to construct that awesome 1997 guestbook. This just scratched
+the surface of the cool stuff going on in the Go ecosystem. There's code competion,
+sublime text integration, hosted automatically generated documentation, and
+continuous integration. The Go tool is awesome and able to build the vast majority
+of Go code that lives anywhere with one command. I highly recommend looking into 
+Go for your next project.
