@@ -385,8 +385,8 @@ But, since that's not cool enough, we're also going to deploy on [Heroku][heroku
 Unfortunately, Go isn't a supported platform on Heroku. Fortunately, it's just
 a buildpack away. The Cedar stack is excellent and allows you to run any binary
 you want to host your web site, so we just have to tell Heroku how to build our
-code. I'm a little biased so I'm going to use the buildpack I created to do this,
-although there are alternatives.
+code. I'm a little biased so I'm going to use the [buildpack I modified][zeebo/buildpack]
+to do this, although there are [alternatives][kr/buildpack].
 
 The cool part about hosting our code on github is that anyone with Go installed
 can just grab it with a single command:
@@ -621,3 +621,5 @@ Go for your next project.
 [gosublime]: http://github.com/DisposaBoy/GoSublime
 [gopkgdoc]: http://go.pkgdoc.org
 [goci]: http://goci.me
+[kr/buildpack]: http://github.com/kr/heroku-buildpack-go
+[zeebo/buildpack]: http://github.com/zeebo/buildpack
