@@ -4,7 +4,7 @@
   <title><![CDATA[Shadynasty Business]]></title>
   <link href="http://shadynasty.biz/atom.xml" rel="self"/>
   <link href="http://shadynasty.biz/"/>
-  <updated>2012-07-30T16:02:52-04:00</updated>
+  <updated>2012-07-31T06:23:12-04:00</updated>
   <id>http://shadynasty.biz/</id>
   <author>
     <name><![CDATA[Jeff Wendling]]></name>
@@ -21,6 +21,9 @@
     <content type="html"><![CDATA[<p>After reading the wonderful article whose title I stole about making
 a guestbook app in Flask, I decided to see how it would compare to my
 favorite language of the year, Go. So here&#8217;s my take.</p>
+
+<!-- more -->
+
 
 <h2>First Steps</h2>
 
