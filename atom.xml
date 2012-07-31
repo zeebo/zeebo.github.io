@@ -4,7 +4,7 @@
   <title><![CDATA[Shadynasty Business]]></title>
   <link href="http://shadynasty.biz/atom.xml" rel="self"/>
   <link href="http://shadynasty.biz/"/>
-  <updated>2012-07-31T07:38:13-04:00</updated>
+  <updated>2012-07-31T08:30:26-04:00</updated>
   <id>http://shadynasty.biz/</id>
   <author>
     <name><![CDATA[Jeff Wendling]]></name>
@@ -14,11 +14,11 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Quick doesn't have to mean dirty]]></title>
-    <link href="http://shadynasty.biz/blog/2012/07/30/quick-doesnt-have-to-mean-dirty/"/>
+    <title type="html"><![CDATA[Quick and Clean in Go]]></title>
+    <link href="http://shadynasty.biz/blog/2012/07/30/quick-and-clean-in-go/"/>
     <updated>2012-07-30T11:43:00-04:00</updated>
-    <id>http://shadynasty.biz/blog/2012/07/30/quick-doesnt-have-to-mean-dirty</id>
-    <content type="html"><![CDATA[<p>After reading the wonderful article whose title I stole about making
+    <id>http://shadynasty.biz/blog/2012/07/30/quick-and-clean-in-go</id>
+    <content type="html"><![CDATA[<p>After reading a <a href="http://me.veekun.com/blog/2012/07/28/quick-doesnt-mean-dirty/">neat article</a> whose title I stole about making
 a guestbook app in Flask, I decided to see how it would compare to my
 favorite language of the year, Go. So here&#8217;s my take.</p>
 
@@ -37,7 +37,7 @@ sigma:gostbook zeebo$ git init
 Initialized empty Git repository in /Users/zeebo/Code/go/src/github.com/zeebo/gostbook/.git/
 </code></pre>
 
-<p>Note that <code>~/Code/go</code> is a directory in my GOPATH environment variable, the only
+<p>Note that <code>~/Code/go</code> is a directory in my <a href="http://golang.org/doc/code.html#GOPATH">GOPATH</a> environment variable, the only
 piece of configuration I need to do to have the build tool know how to fetch and
 build any code that uses these conventions. Lets put in a little hello world code.</p>
 
@@ -126,8 +126,8 @@ sigma:gostbook zeebo$ git commit -m 'initial commit'
 
 <p>The next step is to put templates in. Lets make a template directory
 and some basic templates in there. I&#8217;ll steal the templates from
-Eevee&#8217;s post and change them to use the built in <code>html/template</code> package
-from the standard library. Here&#8217;s the source:</p>
+Eevee&#8217;s post and change them to use the built in <a href="http://golang.org/pkg/html/template">html/template</a>
+package from the standard library. Here&#8217;s the source:</p>
 
 <figure class='code'><figcaption><span>templates/_base.html </span></figcaption>
  <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -261,7 +261,7 @@ sigma:gostbook zeebo$ kill 39918
 <h2>Databases</h2>
 
 <p>Go has many database bindings but the one I find easiest to work with
-would be MongoDB with the excellent mgo driver. Let&#8217;s create our data
+would be MongoDB with the excellent <a href="http://go.pkgdoc.org/labix.org/v2/mgo">mgo</a> driver. Let&#8217;s create our data
 model.</p>
 
 <figure class='code'><figcaption><span>Database entry - entry.go </span></figcaption>
@@ -306,10 +306,12 @@ model.</p>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>We just create a struct with some fields, and for the ID field add some
-tags to it to instruct bson to omit it if the value is empty, and name it
-<code>_id</code> when serializing. We also provide a <code>NewEntry</code> function for creating
-an Entry at the current time.</p>
+<p>We just create a struct with some fields. The <a href="http://go.pkgdoc.org/labix.org/v2/mgo">mgo</a> driver uses runtime
+reflection to look up the information about the struct for setting and reading
+the values. For the ID field add some tags to it to instruct bson to omit it if
+the value is empty, and name it <code>_id</code> when serializing, to have MongoDB pick the
+id for us on insertion, and name it what it&#8217;s expecting. We also provide a
+<code>NewEntry</code> function for creating an Entry at the current time.</p>
 
 <p>Now lets add support to the handler.</p>
 
@@ -396,7 +398,7 @@ an Entry at the current time.</p>
 
 
 <p>Interacting with the databse requires a little boilerplate in the handler,
-but this can easily be removed by clever use of Go&#8217;s interfaces. The <code>net/http</code>
+but this can easily be removed by clever use of Go&#8217;s interfaces. The <a href="http://golang.org/pkg/net/http">net/http</a>
 package will serve anything with a <code>ServeHTTP(ResponseWriter, *Request)</code> method,
 so you can decorate handlers by wrapping them in simple types that implement
 that interface. Doing that is left as an exercise to the reader :)</p>
@@ -423,7 +425,7 @@ that interface. Doing that is left as an exercise to the reader :)</p>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Notice we don&#8217;t worry about any kind of injection. The <code>html/template</code> package
+<p>Notice we don&#8217;t worry about any kind of injection. The <a href="http://golang.org/pkg/html/template">html/template</a> package
 is super awesome and handles that by knowing what it&#8217;s outputing and the context
 in which the data is being used. If you&#8217;re in an html context, it will escape
 the html properly. If you&#8217;re in a script or url context, it knows and will apply
@@ -539,12 +541,12 @@ handler:</p>
 
 <ul>
 <li><p>We had to check in the <code>sign</code> handler if the method was <code>POST</code>. This can
-be fixed by using a more sophisticated muxer than the built in one in <code>net/http</code>.
+be fixed by using a more sophisticated muxer than the built in one in <a href="http://golang.org/pkg/net/http">net/http</a>.
 Like all good packages in Go, all of these things are just interfaces and so you
 can swap them out with many community driven packages. An exellent one is the
-gorilla muxer at <code>code.google.com/p/gorilla/mux</code>.</p></li>
+gorilla muxer at <a href="http://go.pkgdoc.org/code.google.com/p/gorilla/mux">code.google.com/p/gorilla/mux</a>.</p></li>
 <li><p>We had to hard code the urls. Once again, this is solved by using a more
-sophisticated muxer. <code>code.google.com/p/gorilla/mux</code> supports building urls
+sophisticated muxer. <a href="http://go.pkgdoc.org/code.google.com/p/gorilla/mux">code.google.com/p/gorilla/mux</a> supports building urls
 from names you give to the routes.</p></li>
 <li><p>Boilerplate in the handlers to specify a database/collection every time.
 I typically solve this how I wrote earlier by making a type that implements
@@ -569,7 +571,7 @@ like Apache and nginx from my tests. So for most cases, it&#8217;s as simple as 
 a binary and either proxy passing it through from your front end server, or just
 letting the world hit it directly.</p>
 
-<p>But, since that&#8217;s not cool enough, we&#8217;re also going to deploy on Heroku.</p>
+<p>But, since that&#8217;s not cool enough, we&#8217;re also going to deploy on <a href="http://heroku.com">Heroku</a>.</p>
 
 <h2>Buildpacks and a Note About Getting Code</h2>
 
@@ -693,7 +695,7 @@ To git@heroku.com:tranquil-refuge-9104.git
  * [new branch]      master -&gt; master
 </code></pre>
 
-<p>And we have a nice guestbook at http://tranquil-refuge-9104.herokuapp.com</p>
+<p>And we have a nice guestbook at <a href="http://tranquil-refuge-9104.herokuapp.com">http://tranquil-refuge-9104.herokuapp.com</a></p>
 
 <h2>A snag</h2>
 
@@ -813,7 +815,7 @@ into it.</p>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>We just rely on the <code>net/url</code> package to parse the url and grab the database
+<p>We just rely on the <a href="http://golang.org/pkg/net/url">net/url</a> package to parse the url and grab the database
 out of the path argument. Since the path contains the leading forward slash, we
 just slice that off. All thats left is a redeploy:</p>
 
@@ -859,9 +861,9 @@ To git@heroku.com:tranquil-refuge-9104.git
 
 <p>I hope this post showed some of what can be done with Go. In little time and
 code I was able to construct that awesome 1997 guestbook. This just scratched
-the surface of the cool stuff going on in the Go ecosystem. There&#8217;s code competion,
-sublime text integration, hosted automatically generated documentation, and
-continuous integration. The Go tool is awesome and able to build the vast majority
+the surface of the cool stuff going on in the Go ecosystem. There&#8217;s <a href="http://github.com/nsf/gocode">code competion</a>,
+<a href="http://github.com/DisposaBoy/GoSublime">sublime text integration</a>, <a href="http://go.pkgdoc.org">hosted automatically generated documentation</a>, and
+<a href="http://goci.me">continuous integration</a>. The Go tool is awesome and able to build the vast majority
 of Go code that lives anywhere with one command. I highly recommend looking into
 Go for your next project.</p>
 ]]></content>
