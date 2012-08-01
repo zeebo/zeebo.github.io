@@ -17,10 +17,10 @@ favorite language of the year, Go. So here's my take.
 Let's create a new directory to hold the project. I'm gonna host the code on
 github so let's make the local directory match the import path.
 
-	sigma:~ zeebo$ cd ~/Code/go/src
-	sigma:src zeebo$ mkdir -p github.com/zeebo/gostbook
-	sigma:src zeebo$ cd github.com/zeebo/gostbook/
-	sigma:gostbook zeebo$ git init
+	$ cd ~/Code/go/src
+	$ mkdir -p github.com/zeebo/gostbook
+	$ cd github.com/zeebo/gostbook/
+	$ git init
 	Initialized empty Git repository in /Users/zeebo/Code/go/src/github.com/zeebo/gostbook/.git/
 
 Note that `~/Code/go` is a directory in my [GOPATH][gopath] environment variable, the only
@@ -51,12 +51,12 @@ This registers a handler that will match any path and write
 `Hello World!` in the response. Building and running this code
 runs a server that listens on port 8080, so lets visit it.
 
-	sigma:gostbook zeebo$ go build
-	sigma:gostbook zeebo$ ./gostbook &
+	$ go build
+	$ ./gostbook &
 	[1] 39629
-	sigma:gostbook zeebo$ curl localhost:8080
+	$ curl localhost:8080
 	Hello World!
-	sigma:gostbook zeebo$ kill 39629
+	$ kill 39629
 
 Neat!
 
@@ -65,12 +65,12 @@ Neat!
 Let's do our source control duty, and make a commit with our super simple
 app.
 
-	sigma:gostbook zeebo$ cat .gitignore 
+	$ cat .gitignore 
 	*
 	!.gitignore
 	!*.go
 	!*.html
-	sigma:gostbook zeebo$ git status
+	$ git status
 	# On branch master
 	#
 	# Initial commit
@@ -81,8 +81,8 @@ app.
 	#	.gitignore
 	#	main.go
 	nothing added to commit but untracked files present (use "git add" to track)
-	sigma:gostbook zeebo$ git add .
-	sigma:gostbook zeebo$ git commit -m 'initial commit'
+	$ git add .
+	$ git commit -m 'initial commit'
 	[master (root-commit) de0b184] initial commit
 	 2 files changed, 21 insertions(+)
 	 create mode 100644 .gitignore
@@ -148,10 +148,10 @@ func hello(w http.ResponseWriter, req *http.Request) {
 
 Building and running again, we see it's working:
 
-	sigma:gostbook zeebo$ go build
-	sigma:gostbook zeebo$ ./gostbook &
+	$ go build
+	$ ./gostbook &
 	[1] 39918
-	sigma:gostbook zeebo$ curl localhost:8080
+	$ curl localhost:8080
 	<!DOCTYPE html>
 	<html lang="en">
 	    <head>
@@ -174,7 +174,7 @@ Building and running again, we see it's working:
 	        </footer>
 	    </body>
 	</html>
-	sigma:gostbook zeebo$ kill 39918
+	$ kill 39918
 
 Let's be diligent and make another commit. On to data!
 
@@ -423,27 +423,27 @@ Let's commit that.
 
 Lets create the heroku app.
 
-	sigma:gostbook zeebo$ heroku create --stack cedar --buildpack http://github.com/zeebo/buildpack.git
+	$ heroku create --stack cedar --buildpack http://github.com/zeebo/buildpack.git
 	Creating tranquil-refuge-9104... done, stack is cedar
 	http://tranquil-refuge-9104.herokuapp.com/ | git@heroku.com:tranquil-refuge-9104.git
 	Git remote heroku added
 
 Add in a free mongo database and configure the `DATABASE_URL`:
 
-	sigma:gostbook zeebo$ heroku addons:add mongolab:starter
+	$ heroku addons:add mongolab:starter
 	-----> Adding mongolab:starter to tranquil-refuge-9104... done, v3 (free)
 	       Welcome to MongoLab.
-	sigma:gostbook zeebo$ heroku config
+	$ heroku config
 	BUILDPACK_URL => http://github.com/zeebo/buildpack.git
 	MONGOLAB_URI  => ...snip...
-	sigma:gostbook zeebo$ heroku config:add DATABASE_URL=...snip...
+	$ heroku config:add DATABASE_URL=...snip...
 	Adding config vars and restarting app... done, v4
 	  DATABASE_URL => ...snip...
 
 If I was smarter, I would have just used `MONGOLAB_URI` in the code, but I'm not
 so here we are. Finally, we can just push it up and watch the magic:
 
-	sigma:gostbook zeebo$ git push heroku master
+	$ git push heroku master
 	Counting objects: 24, done.
 	Delta compression using up to 4 threads.
 	Compressing objects: 100% (21/21), done.
@@ -561,11 +561,11 @@ We just rely on the [net/url][net/url] package to parse the url and grab the dat
 out of the path argument. Since the path contains the leading forward slash, we
 just slice that off. All thats left is a redeploy:
 
-	sigma:gostbook zeebo$ git add .
-	sigma:gostbook zeebo$ git commit -m 'fixes for database'
+	$ git add .
+	$ git commit -m 'fixes for database'
 	[master 2b4bf78] fixes for database
 	 2 files changed, 11 insertions(+), 3 deletions(-)
-	sigma:gostbook zeebo$ git push heroku master
+	$ git push heroku master
 	Counting objects: 7, done.
 	Delta compression using up to 4 threads.
 	Compressing objects: 100% (4/4), done.
