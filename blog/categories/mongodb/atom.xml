@@ -4,7 +4,7 @@
   <title><![CDATA[Category: mongodb | Shadynasty Business]]></title>
   <link href="http://shadynasty.biz/blog/categories/mongodb/atom.xml" rel="self"/>
   <link href="http://shadynasty.biz/"/>
-  <updated>2012-07-31T08:45:41-04:00</updated>
+  <updated>2012-08-01T15:50:21-04:00</updated>
   <id>http://shadynasty.biz/</id>
   <author>
     <name><![CDATA[Jeff Wendling]]></name>
@@ -30,10 +30,10 @@ favorite language of the year, Go. So here's my take.</p>
 <p>Let's create a new directory to hold the project. I'm gonna host the code on
 github so let's make the local directory match the import path.</p>
 
-<pre><code>sigma:~ zeebo$ cd ~/Code/go/src
-sigma:src zeebo$ mkdir -p github.com/zeebo/gostbook
-sigma:src zeebo$ cd github.com/zeebo/gostbook/
-sigma:gostbook zeebo$ git init
+<pre><code>$ cd ~/Code/go/src
+$ mkdir -p github.com/zeebo/gostbook
+$ cd github.com/zeebo/gostbook/
+$ git init
 Initialized empty Git repository in /Users/zeebo/Code/go/src/github.com/zeebo/gostbook/.git/
 </code></pre>
 
@@ -100,12 +100,12 @@ build any code that uses these conventions. Lets put in a little hello world cod
 <code>Hello World!</code> in the response. Building and running this code
 runs a server that listens on port 8080, so lets visit it.</p>
 
-<pre><code>sigma:gostbook zeebo$ go build
-sigma:gostbook zeebo$ ./gostbook &amp;
+<pre><code>$ go build
+$ ./gostbook &amp;
 [1] 39629
-sigma:gostbook zeebo$ curl localhost:8080
+$ curl localhost:8080
 Hello World!
-sigma:gostbook zeebo$ kill 39629
+$ kill 39629
 </code></pre>
 
 <p>Neat!</p>
@@ -115,12 +115,12 @@ sigma:gostbook zeebo$ kill 39629
 <p>Let's do our source control duty, and make a commit with our super simple
 app.</p>
 
-<pre><code>sigma:gostbook zeebo$ cat .gitignore 
+<pre><code>$ cat .gitignore 
 *
 !.gitignore
 !*.go
 !*.html
-sigma:gostbook zeebo$ git status
+$ git status
 # On branch master
 #
 # Initial commit
@@ -131,8 +131,8 @@ sigma:gostbook zeebo$ git status
 #   .gitignore
 #   main.go
 nothing added to commit but untracked files present (use "git add" to track)
-sigma:gostbook zeebo$ git add .
-sigma:gostbook zeebo$ git commit -m 'initial commit'
+$ git add .
+$ git commit -m 'initial commit'
 [master (root-commit) de0b184] initial commit
  2 files changed, 21 insertions(+)
  create mode 100644 .gitignore
@@ -269,10 +269,10 @@ package from the standard library. Here's the source:</p>
 
 <p>Building and running again, we see it's working:</p>
 
-<pre><code>sigma:gostbook zeebo$ go build
-sigma:gostbook zeebo$ ./gostbook &amp;
+<pre><code>$ go build
+$ ./gostbook &amp;
 [1] 39918
-sigma:gostbook zeebo$ curl localhost:8080
+$ curl localhost:8080
 &lt;!DOCTYPE html&gt;
 &lt;html lang="en"&gt;
     &lt;head&gt;
@@ -295,7 +295,7 @@ sigma:gostbook zeebo$ curl localhost:8080
         &lt;/footer&gt;
     &lt;/body&gt;
 &lt;/html&gt;
-sigma:gostbook zeebo$ kill 39918
+$ kill 39918
 </code></pre>
 
 <p>Let's be diligent and make another commit. On to data!</p>
@@ -713,7 +713,7 @@ Let's commit that.</p>
 
 <p>Lets create the heroku app.</p>
 
-<pre><code>sigma:gostbook zeebo$ heroku create --stack cedar --buildpack http://github.com/zeebo/buildpack.git
+<pre><code>$ heroku create --stack cedar --buildpack http://github.com/zeebo/buildpack.git
 Creating tranquil-refuge-9104... done, stack is cedar
 http://tranquil-refuge-9104.herokuapp.com/ | git@heroku.com:tranquil-refuge-9104.git
 Git remote heroku added
@@ -721,13 +721,13 @@ Git remote heroku added
 
 <p>Add in a free mongo database and configure the <code>DATABASE_URL</code>:</p>
 
-<pre><code>sigma:gostbook zeebo$ heroku addons:add mongolab:starter
+<pre><code>$ heroku addons:add mongolab:starter
 -----&gt; Adding mongolab:starter to tranquil-refuge-9104... done, v3 (free)
        Welcome to MongoLab.
-sigma:gostbook zeebo$ heroku config
+$ heroku config
 BUILDPACK_URL =&gt; http://github.com/zeebo/buildpack.git
 MONGOLAB_URI  =&gt; ...snip...
-sigma:gostbook zeebo$ heroku config:add DATABASE_URL=...snip...
+$ heroku config:add DATABASE_URL=...snip...
 Adding config vars and restarting app... done, v4
   DATABASE_URL =&gt; ...snip...
 </code></pre>
@@ -735,7 +735,7 @@ Adding config vars and restarting app... done, v4
 <p>If I was smarter, I would have just used <code>MONGOLAB_URI</code> in the code, but I'm not
 so here we are. Finally, we can just push it up and watch the magic:</p>
 
-<pre><code>sigma:gostbook zeebo$ git push heroku master
+<pre><code>$ git push heroku master
 Counting objects: 24, done.
 Delta compression using up to 4 threads.
 Compressing objects: 100% (21/21), done.
@@ -955,11 +955,11 @@ into it.</p>
 out of the path argument. Since the path contains the leading forward slash, we
 just slice that off. All thats left is a redeploy:</p>
 
-<pre><code>sigma:gostbook zeebo$ git add .
-sigma:gostbook zeebo$ git commit -m 'fixes for database'
+<pre><code>$ git add .
+$ git commit -m 'fixes for database'
 [master 2b4bf78] fixes for database
  2 files changed, 11 insertions(+), 3 deletions(-)
-sigma:gostbook zeebo$ git push heroku master
+$ git push heroku master
 Counting objects: 7, done.
 Delta compression using up to 4 threads.
 Compressing objects: 100% (4/4), done.
