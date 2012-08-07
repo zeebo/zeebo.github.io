@@ -4,7 +4,7 @@
   <title><![CDATA[Category: web | Shadynasty Business]]></title>
   <link href="http://shadynasty.biz/blog/categories/web/atom.xml" rel="self"/>
   <link href="http://shadynasty.biz/"/>
-  <updated>2012-08-07T14:45:35-04:00</updated>
+  <updated>2012-08-07T14:51:27-04:00</updated>
   <id>http://shadynasty.biz/</id>
   <author>
     <name><![CDATA[Jeff Wendling]]></name>
@@ -607,8 +607,8 @@ option. Heres that function:</p>
 <p>We choose to have the function panic on errors because any incorrect reversal
 is a programmer error. We also accept a variadic number of interface values because
 sometimes we need to have a parameter in the reversal that is an integer, like the
-year on the blog post url, and the URL function takes strings. So rather than force
-the template to do the conversion, or the function executing the template, we
+year on the blog post url, and the <a href="http://gorilla-web.appspot.com/pkg/mux#Route.URL">URL function</a> takes strings.
+So rather than force the template to do the conversion, or the function executing the template, we
 just convert everything to a string by calling <code>fmt.Sprint</code> on it. Then we have
 to add this function to the template.</p>
 
