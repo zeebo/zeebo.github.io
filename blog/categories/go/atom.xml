@@ -4,7 +4,7 @@
   <title><![CDATA[Category: go | Shadynasty Business]]></title>
   <link href="http://shadynasty.biz/blog/categories/go/atom.xml" rel="self"/>
   <link href="http://shadynasty.biz/"/>
-  <updated>2012-08-07T14:51:27-04:00</updated>
+  <updated>2012-08-07T14:58:46-04:00</updated>
   <id>http://shadynasty.biz/</id>
   <author>
     <name><![CDATA[Jeff Wendling]]></name>
@@ -18,8 +18,8 @@
     <link href="http://shadynasty.biz/blog/2012/08/07/painless-web-handlers-in-go/"/>
     <updated>2012-08-07T14:13:00-04:00</updated>
     <id>http://shadynasty.biz/blog/2012/08/07/painless-web-handlers-in-go</id>
-    <content type="html"><![CDATA[<p><a href="http://shadynasty.biz/blog/2012/07/30/quick-and-clean-in-go/">Last time</a> we made a little guestbook application, but there was a
-couple little pain points. We had to have some boiler plate at the top of
+    <content type="html"><![CDATA[<p><a href="http://shadynasty.biz/blog/2012/07/30/quick-and-clean-in-go/">Last time</a> we made a little guestbook application, but there were a
+couple pain points. We had to have some boiler plate at the top of
 all of the handlers, and errors were handled by copying the same line of code
 everywhere. We also had fixed url paths hard coded in handlers and templates.
 Let's see how we can fix that.</p>
