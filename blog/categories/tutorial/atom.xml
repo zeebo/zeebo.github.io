@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tutorial | Shadynasty Business]]></title>
   <link href="http://shadynasty.biz/blog/categories/tutorial/atom.xml" rel="self"/>
   <link href="http://shadynasty.biz/"/>
-  <updated>2012-08-07T14:58:46-04:00</updated>
+  <updated>2012-08-07T19:48:09-04:00</updated>
   <id>http://shadynasty.biz/</id>
   <author>
     <name><![CDATA[Jeff Wendling]]></name>
@@ -640,6 +640,7 @@ to add this function to the template.</p>
 <span class='line-number'>25</span>
 <span class='line-number'>26</span>
 <span class='line-number'>27</span>
+<span class='line-number'>28</span>
 </pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">var</span> <span class="n">funcs</span> <span class="p">=</span> <span class="n">template</span><span class="p">.</span><span class="n">FuncMap</span><span class="p">{&lt;/</span><span class="n">p</span><span class="p">&gt;</span>
 </span><span class='line'>
 </span><span class='line'><span class="p">&lt;</span><span class="n">pre</span><span class="p">&gt;&lt;</span><span class="n">code</span><span class="p">&gt;</span><span class="s">&quot;reverse&quot;</span><span class="p">:</span> <span class="n">reverse</span><span class="p">,</span>
@@ -651,7 +652,8 @@ to add this function to the template.</p>
 </span><span class='line'>
 </span><span class='line'><span class="p">&lt;</span><span class="n">pre</span><span class="p">&gt;&lt;</span><span class="n">code</span><span class="p">&gt;</span><span class="c1">//create a new template named after the first file in the list and add</span>
 </span><span class='line'><span class="c1">//the function map to it</span>
-</span><span class='line'><span class="n">t</span> <span class="p">:=</span> <span class="n">template</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">]).</span><span class="n">Funcs</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
+</span><span class='line'><span class="n">name</span> <span class="p">:=</span> <span class="n">filepath</span><span class="p">.</span><span class="n">Base</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</span><span class='line'><span class="n">t</span> <span class="p">:=</span> <span class="n">template</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="n">name</span><span class="p">).</span><span class="n">Funcs</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
 </span><span class='line'>
 </span><span class='line'><span class="c1">//parse the files into the template and panic on errors</span>
 </span><span class='line'><span class="n">t</span> <span class="p">=</span> <span class="n">template</span><span class="p">.</span><span class="n">Must</span><span class="p">(</span><span class="n">t</span><span class="p">.</span><span class="n">ParseFiles</span><span class="p">(</span><span class="n">files</span><span class="p">...))</span>

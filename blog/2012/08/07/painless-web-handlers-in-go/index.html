@@ -635,6 +635,7 @@ to add this function to the template.</p>
 <span class='line-number'>16</span>
 <span class='line-number'>17</span>
 <span class='line-number'>18</span>
+<span class='line-number'>19</span>
 </pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">var</span> <span class="n">funcs</span> <span class="p">=</span> <span class="n">template</span><span class="p">.</span><span class="n">FuncMap</span><span class="p">{</span>
 </span><span class='line'>  <span class="s">&quot;reverse&quot;</span><span class="p">:</span> <span class="n">reverse</span><span class="p">,</span>
 </span><span class='line'><span class="p">}</span>
@@ -642,7 +643,8 @@ to add this function to the template.</p>
 </span><span class='line'><span class="k">func</span> <span class="n">parseTemplate</span><span class="p">(</span><span class="n">files</span> <span class="p">...</span><span class="nb">string</span><span class="p">)</span> <span class="p">*</span><span class="n">template</span><span class="p">.</span><span class="n">Template</span> <span class="p">{</span>
 </span><span class='line'>  <span class="c1">//create a new template named after the first file in the list and add</span>
 </span><span class='line'>  <span class="c1">//the function map to it</span>
-</span><span class='line'>  <span class="n">t</span> <span class="p">:=</span> <span class="n">template</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">]).</span><span class="n">Funcs</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">name</span> <span class="p">:=</span> <span class="n">filepath</span><span class="p">.</span><span class="n">Base</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</span><span class='line'>  <span class="n">t</span> <span class="p">:=</span> <span class="n">template</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="n">name</span><span class="p">).</span><span class="n">Funcs</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
 </span><span class='line'>
 </span><span class='line'>  <span class="c1">//parse the files into the template and panic on errors</span>
 </span><span class='line'>  <span class="n">t</span> <span class="p">=</span> <span class="n">template</span><span class="p">.</span><span class="n">Must</span><span class="p">(</span><span class="n">t</span><span class="p">.</span><span class="n">ParseFiles</span><span class="p">(</span><span class="n">files</span><span class="p">...))</span>
