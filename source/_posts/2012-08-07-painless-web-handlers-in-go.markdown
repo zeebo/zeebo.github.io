@@ -6,8 +6,8 @@ comments: true
 categories: [go, web, tutorial]
 ---
 
-[Last time][quick] we made a little guestbook application, but there was a
-couple little pain points. We had to have some boiler plate at the top of
+[Last time][quick] we made a little guestbook application, but there were a
+couple pain points. We had to have some boiler plate at the top of
 all of the handlers, and errors were handled by copying the same line of code
 everywhere. We also had fixed url paths hard coded in handlers and templates.
 Let's see how we can fix that.
