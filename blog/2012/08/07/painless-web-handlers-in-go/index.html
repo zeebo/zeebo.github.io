@@ -1,0 +1,837 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Painless Web Handlers in Go - Shadynasty Business</title>
+  <meta name="author" content="Jeff Wendling">
+
+  
+  <meta name="description" content="Last time we made a little guestbook application, but there was a
+couple little pain points. We had to have some boiler plate at the top of
+all of &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://shadynasty.biz/blog/2012/08/07/painless-web-handlers-in-go/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Shadynasty Business" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Shadynasty Business</a></h1>
+  
+    <h2>That's Sha-Dynasty</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:shadynasty.biz" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Painless Web Handlers in Go</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-08-07T14:13:00-04:00" pubdate data-updated="true">Aug 7<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><a href="http://shadynasty.biz/blog/2012/07/30/quick-and-clean-in-go/">Last time</a> we made a little guestbook application, but there was a
+couple little pain points. We had to have some boiler plate at the top of
+all of the handlers, and errors were handled by copying the same line of code
+everywhere. We also had fixed url paths hard coded in handlers and templates.
+Let&#8217;s see how we can fix that.</p>
+
+<!-- more -->
+
+
+<h2>Adding context</h2>
+
+<p>A lot of the boiler plate in the handlers last time had to do with the database
+for each request, so let&#8217;s start by cleaning that up. How we do this is by
+creating a type that will have the context for the request.</p>
+
+<figure class='code'><figcaption><span>context.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">import</span> <span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;labix.org/v2/mgo&quot;</span>
+</span><span class='line'>  <span class="s">&quot;net/http&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">type</span> <span class="n">Context</span> <span class="k">struct</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">Database</span> <span class="p">*</span><span class="n">mgo</span><span class="p">.</span><span class="n">Database</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="p">(</span><span class="n">c</span> <span class="p">*</span><span class="n">Context</span><span class="p">)</span> <span class="n">Close</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">c</span><span class="p">.</span><span class="n">Database</span><span class="p">.</span><span class="n">Session</span><span class="p">.</span><span class="n">Close</span><span class="p">()</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">NewContext</span><span class="p">(</span><span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">)</span> <span class="p">(*</span><span class="n">Context</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">&amp;</span><span class="n">Context</span><span class="p">{</span>
+</span><span class='line'>      <span class="n">Database</span><span class="p">:</span> <span class="n">session</span><span class="p">.</span><span class="n">Clone</span><span class="p">().</span><span class="n">DB</span><span class="p">(</span><span class="n">database</span><span class="p">),</span>
+</span><span class='line'>  <span class="p">},</span> <span class="n">nil</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>A context is the general context the request will use to make decisions, bundled
+up with the handles to the resources it needs to perform actions. Right now we
+only have the database. Let&#8217;s change our handlers to use the new context.</p>
+
+<figure class='code'><figcaption><span>main.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">func</span> <span class="n">hello</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">ctx</span><span class="p">,</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">NewContext</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">defer</span> <span class="n">ctx</span><span class="p">.</span><span class="n">Close</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//set up the collection and query</span>
+</span><span class='line'>  <span class="n">coll</span> <span class="p">:=</span> <span class="n">ctx</span><span class="p">.</span><span class="n">Database</span><span class="p">.</span><span class="n">C</span><span class="p">(</span><span class="s">&quot;entries&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">query</span> <span class="p">:=</span> <span class="n">coll</span><span class="p">.</span><span class="n">Find</span><span class="p">(</span><span class="n">nil</span><span class="p">).</span><span class="n">Sort</span><span class="p">(</span><span class="s">&quot;-timestamp&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//execute the query</span>
+</span><span class='line'>  <span class="c1">//TODO: add pagination :)</span>
+</span><span class='line'>  <span class="k">var</span> <span class="n">entries</span> <span class="p">[]</span><span class="n">Entry</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">query</span><span class="p">.</span><span class="n">All</span><span class="p">(&amp;</span><span class="n">entries</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//execute the template</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">index</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">entries</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">sign</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//make sure we got post</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">req</span><span class="p">.</span><span class="n">Method</span> <span class="p">!=</span> <span class="s">&quot;POST&quot;</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">NotFound</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">req</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">entry</span> <span class="p">:=</span> <span class="n">NewEntry</span><span class="p">()</span>
+</span><span class='line'>  <span class="n">entry</span><span class="p">.</span><span class="n">Name</span> <span class="p">=</span> <span class="n">req</span><span class="p">.</span><span class="n">FormValue</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">entry</span><span class="p">.</span><span class="n">Message</span> <span class="p">=</span> <span class="n">req</span><span class="p">.</span><span class="n">FormValue</span><span class="p">(</span><span class="s">&quot;message&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="n">entry</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="s">&quot;&quot;</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">entry</span><span class="p">.</span><span class="n">Name</span> <span class="p">=</span> <span class="s">&quot;Some dummy who forgot a name&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">entry</span><span class="p">.</span><span class="n">Message</span> <span class="p">==</span> <span class="s">&quot;&quot;</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">entry</span><span class="p">.</span><span class="n">Message</span> <span class="p">=</span> <span class="s">&quot;Some dummy who forgot a message.&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">ctx</span><span class="p">,</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">NewContext</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">defer</span> <span class="n">ctx</span><span class="p">.</span><span class="n">Close</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">coll</span> <span class="p">:=</span> <span class="n">ctx</span><span class="p">.</span><span class="n">Database</span><span class="p">.</span><span class="n">C</span><span class="p">(</span><span class="s">&quot;entries&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">coll</span><span class="p">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">entry</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">http</span><span class="p">.</span><span class="n">Redirect</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="s">&quot;/&quot;</span><span class="p">,</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusTemporaryRedirect</span><span class="p">)</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now thats wonderful, but it looks like we just made it worse.</p>
+
+<h2>The magic of interfaces</h2>
+
+<p>To fix this, we&#8217;re going to create a new handler type, and give it a
+<code>ServeHTTP</code> method. This new handler type will handle creating/closing
+the context, and handling any errors that arise. Here&#8217;s the definition:</p>
+
+<figure class='code'><figcaption><span>http.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">import</span> <span class="s">&quot;net/http&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">type</span> <span class="n">handler</span> <span class="k">func</span><span class="p">(</span><span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">,</span> <span class="p">*</span><span class="n">Context</span><span class="p">)</span> <span class="n">error</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="p">(</span><span class="n">h</span> <span class="n">handler</span><span class="p">)</span> <span class="n">ServeHTTP</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//create the context</span>
+</span><span class='line'>  <span class="n">ctx</span><span class="p">,</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">NewContext</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">defer</span> <span class="n">ctx</span><span class="p">.</span><span class="n">Close</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//run the handler and grab the error, and report it</span>
+</span><span class='line'>  <span class="n">err</span> <span class="p">=</span> <span class="n">h</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>handler</code> type is a function type, meaning any function with that signature
+can be cast to that type. We define a method on the function (I know!) so that
+the net/http package can use it as though it were any other handler. We&#8217;ve
+already been doing something very similar to this already. When we called the
+<code>http.HandleFunc</code> function in our <code>main.go</code>, we&#8217;ve been using our functions
+as the type <code>http.HandlerFunc</code> which defines a ServeHTTP method, just like ours.
+See, it&#8217;s not so bad. Here&#8217;s what the new handlers look like:</p>
+
+<figure class='code'><figcaption><span>handlers.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">import</span> <span class="s">&quot;net/http&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">hello</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">ctx</span> <span class="p">*</span><span class="n">Context</span><span class="p">)</span> <span class="p">(</span><span class="n">err</span> <span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//set up the collection and query</span>
+</span><span class='line'>  <span class="n">coll</span> <span class="p">:=</span> <span class="n">ctx</span><span class="p">.</span><span class="n">Database</span><span class="p">.</span><span class="n">C</span><span class="p">(</span><span class="s">&quot;entries&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">query</span> <span class="p">:=</span> <span class="n">coll</span><span class="p">.</span><span class="n">Find</span><span class="p">(</span><span class="n">nil</span><span class="p">).</span><span class="n">Sort</span><span class="p">(</span><span class="s">&quot;-timestamp&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//execute the query</span>
+</span><span class='line'>  <span class="c1">//TODO: add pagination :)</span>
+</span><span class='line'>  <span class="k">var</span> <span class="n">entries</span> <span class="p">[]</span><span class="n">Entry</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">=</span> <span class="n">query</span><span class="p">.</span><span class="n">All</span><span class="p">(&amp;</span><span class="n">entries</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//execute the template</span>
+</span><span class='line'>  <span class="n">err</span> <span class="p">=</span> <span class="n">index</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">entries</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">sign</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">ctx</span> <span class="p">*</span><span class="n">Context</span><span class="p">)</span> <span class="p">(</span><span class="n">err</span> <span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//make sure we got post</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">req</span><span class="p">.</span><span class="n">Method</span> <span class="p">!=</span> <span class="s">&quot;POST&quot;</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">NotFound</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">req</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">entry</span> <span class="p">:=</span> <span class="n">NewEntry</span><span class="p">()</span>
+</span><span class='line'>  <span class="n">entry</span><span class="p">.</span><span class="n">Name</span> <span class="p">=</span> <span class="n">req</span><span class="p">.</span><span class="n">FormValue</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">entry</span><span class="p">.</span><span class="n">Message</span> <span class="p">=</span> <span class="n">req</span><span class="p">.</span><span class="n">FormValue</span><span class="p">(</span><span class="s">&quot;message&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="n">entry</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="s">&quot;&quot;</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">entry</span><span class="p">.</span><span class="n">Name</span> <span class="p">=</span> <span class="s">&quot;Some dummy who forgot a name&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">entry</span><span class="p">.</span><span class="n">Message</span> <span class="p">==</span> <span class="s">&quot;&quot;</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">entry</span><span class="p">.</span><span class="n">Message</span> <span class="p">=</span> <span class="s">&quot;Some dummy who forgot a message.&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">coll</span> <span class="p">:=</span> <span class="n">ctx</span><span class="p">.</span><span class="n">Database</span><span class="p">.</span><span class="n">C</span><span class="p">(</span><span class="s">&quot;entries&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">=</span> <span class="n">coll</span><span class="p">.</span><span class="n">Insert</span><span class="p">(</span><span class="n">entry</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">http</span><span class="p">.</span><span class="n">Redirect</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="s">&quot;/&quot;</span><span class="p">,</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusTemporaryRedirect</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Much better! Let&#8217;s commit that.</p>
+
+<h2>Routing</h2>
+
+<p>The other pain points, hard coded urls, and checking the request method,
+are going to be handled by more advanced routing. For this, we&#8217;re going
+to use the execllent <a href="http://gorilla-web.appspot.com">gorilla web toolkit</a>, specifically the
+<a href="http://gorilla-web.appspot.com/pkg/pat">gorilla/pat</a> package. I really like the simple API it provides
+with easy parameter capturing from the url. It&#8217;s very easy to use with the
+<code>net/http</code> package:</p>
+
+<figure class='code'><figcaption><span>main.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">var</span> <span class="n">err</span> <span class="n">error</span>
+</span><span class='line'>  <span class="n">u</span> <span class="p">:=</span> <span class="n">os</span><span class="p">.</span><span class="n">Getenv</span><span class="p">(</span><span class="s">&quot;DATABASE_URL&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">parsed</span><span class="p">,</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">url</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">panic</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="n">database</span> <span class="p">=</span> <span class="n">parsed</span><span class="p">.</span><span class="n">Path</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+</span><span class='line'>  <span class="n">session</span><span class="p">,</span> <span class="n">err</span> <span class="p">=</span> <span class="n">mgo</span><span class="p">.</span><span class="n">Dial</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">panic</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">r</span> <span class="p">:=</span> <span class="n">pat</span><span class="p">.</span><span class="n">New</span><span class="p">()</span>
+</span><span class='line'>  <span class="n">r</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;GET&quot;</span><span class="p">,</span> <span class="s">&quot;/&quot;</span><span class="p">,</span> <span class="n">handler</span><span class="p">(</span><span class="n">hello</span><span class="p">)).</span><span class="n">Name</span><span class="p">(</span><span class="s">&quot;index&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">r</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;POST&quot;</span><span class="p">,</span> <span class="s">&quot;/sign&quot;</span><span class="p">,</span> <span class="n">handler</span><span class="p">(</span><span class="n">sign</span><span class="p">)).</span><span class="n">Name</span><span class="p">(</span><span class="s">&quot;sign&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">=</span> <span class="n">http</span><span class="p">.</span><span class="n">ListenAndServe</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">+</span><span class="n">os</span><span class="p">.</span><span class="n">Getenv</span><span class="p">(</span><span class="s">&quot;PORT&quot;</span><span class="p">),</span> <span class="n">r</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">panic</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>One important and easy to miss detail is we now pass the router in as the
+second argument to the <code>http.ListenAndServe</code> call. Now we can remove the check
+that the method is <code>POST</code> in the <code>sign</code> handler, as the router takes care of that
+for us. Lets move on to fixing the hard coded entries.</p>
+
+<h2>Reversing URLs</h2>
+
+<p>If you&#8217;ll notice, we gave the handlers a <code>.Name</code> call. The <a href="http://gorilla-web.appspot.com/pkg/pat">gorilla/pat</a>
+package returns a <code>*mux.Router</code> for us to work with. Using that we can have the
+router rebuild urls from the names. For example, if we wanted to grab the url for
+the index page, we could use</p>
+
+<pre><code>r.GetRoute("index").URL()
+</code></pre>
+
+<p>but since <code>r</code> is inaccessable outside the <code>main</code> function, we have to move it
+into a higher scope. Let&#8217;s do that.</p>
+
+<figure class='code'><figcaption><span>main.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">var</span> <span class="n">router</span> <span class="p">*</span><span class="n">pat</span><span class="p">.</span><span class="n">Router</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//...</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">router</span> <span class="p">=</span> <span class="n">pat</span><span class="p">.</span><span class="n">New</span><span class="p">()</span>
+</span><span class='line'>  <span class="n">router</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;GET&quot;</span><span class="p">,</span> <span class="s">&quot;/&quot;</span><span class="p">,</span> <span class="n">handler</span><span class="p">(</span><span class="n">hello</span><span class="p">)).</span><span class="n">Name</span><span class="p">(</span><span class="s">&quot;index&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">router</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;POST&quot;</span><span class="p">,</span> <span class="s">&quot;/sign&quot;</span><span class="p">,</span> <span class="n">handler</span><span class="p">(</span><span class="n">sign</span><span class="p">)).</span><span class="n">Name</span><span class="p">(</span><span class="s">&quot;sign&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">=</span> <span class="n">http</span><span class="p">.</span><span class="n">ListenAndServe</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">+</span><span class="n">os</span><span class="p">.</span><span class="n">Getenv</span><span class="p">(</span><span class="s">&quot;PORT&quot;</span><span class="p">),</span> <span class="n">router</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">panic</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And now we can update the sign handler</p>
+
+<figure class='code'><figcaption><span>handlers.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">func</span> <span class="n">sign</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">ctx</span> <span class="p">*</span><span class="n">Context</span><span class="p">)</span> <span class="p">(</span><span class="n">err</span> <span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//...</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">url</span><span class="p">,</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">router</span><span class="p">.</span><span class="n">GetRoute</span><span class="p">(</span><span class="s">&quot;index&quot;</span><span class="p">).</span><span class="n">URL</span><span class="p">()</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">http</span><span class="p">.</span><span class="n">Redirect</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusTemporaryRedirect</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Reversing in Templates</h2>
+
+<p>To reverse inside the template, we could either remember to pass the router in
+as part of the template context on every invocation, or we could add a function to
+the template. Since keeping track of the router through nested templates and scope
+changes is a daunting task, adding a function to do the reversing is a better
+option. Heres that function:</p>
+
+<figure class='code'><figcaption><span>main.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">func</span> <span class="n">reverse</span><span class="p">(</span><span class="n">name</span> <span class="nb">string</span><span class="p">,</span> <span class="n">things</span> <span class="p">...</span><span class="k">interface</span><span class="p">{})</span> <span class="nb">string</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//convert the things to strings</span>
+</span><span class='line'>  <span class="n">strs</span> <span class="p">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="nb">string</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">things</span><span class="p">))</span>
+</span><span class='line'>  <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">th</span> <span class="p">:=</span> <span class="k">range</span> <span class="n">things</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">strs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">=</span> <span class="n">fmt</span><span class="p">.</span><span class="n">Sprint</span><span class="p">(</span><span class="n">th</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="c1">//grab the route</span>
+</span><span class='line'>  <span class="n">u</span><span class="p">,</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">router</span><span class="p">.</span><span class="n">GetRoute</span><span class="p">(</span><span class="n">name</span><span class="p">).</span><span class="n">URL</span><span class="p">(</span><span class="n">strs</span><span class="p">...)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">panic</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">u</span><span class="p">.</span><span class="n">Path</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We choose to have the function panic on errors because any incorrect reversal
+is a programmer error. We also accept a variadic number of interface values because
+sometimes we need to have a parameter in the reversal that is an integer, like the
+year on the blog post url, and the URL function takes strings. So rather than force
+the template to do the conversion, or the function executing the template, we
+just convert everything to a string by calling <code>fmt.Sprint</code> on it. Then we have
+to add this function to the template.</p>
+
+<figure class='code'><figcaption><span>main.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">var</span> <span class="n">funcs</span> <span class="p">=</span> <span class="n">template</span><span class="p">.</span><span class="n">FuncMap</span><span class="p">{</span>
+</span><span class='line'>  <span class="s">&quot;reverse&quot;</span><span class="p">:</span> <span class="n">reverse</span><span class="p">,</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">parseTemplate</span><span class="p">(</span><span class="n">files</span> <span class="p">...</span><span class="nb">string</span><span class="p">)</span> <span class="p">*</span><span class="n">template</span><span class="p">.</span><span class="n">Template</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//create a new template named after the first file in the list and add</span>
+</span><span class='line'>  <span class="c1">//the function map to it</span>
+</span><span class='line'>  <span class="n">t</span> <span class="p">:=</span> <span class="n">template</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">]).</span><span class="n">Funcs</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//parse the files into the template and panic on errors</span>
+</span><span class='line'>  <span class="n">t</span> <span class="p">=</span> <span class="n">template</span><span class="p">.</span><span class="n">Must</span><span class="p">(</span><span class="n">t</span><span class="p">.</span><span class="n">ParseFiles</span><span class="p">(</span><span class="n">files</span><span class="p">...))</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">t</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">var</span> <span class="n">index</span> <span class="p">=</span> <span class="n">parseTemplate</span><span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;templates/_base.html&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s">&quot;templates/index.html&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Theres a tricky point here: the template package will error when trying to parse
+a template and it finds a function invocation to something undefined. That means
+we have to add our function map to the template before we add the files to parse.
+We write a little helper function to do this correctly. Now we can update the
+template to use it.</p>
+
+<pre><code>&lt;form action="{{ reverse "sign" }}" method="POST"&gt;
+</code></pre>
+
+<p>Let&#8217;s update the <code>sign</code> handler to use the reverse function too.</p>
+
+<pre><code>http.Redirect(w, req, reverse("index"), http.StatusSeeOther)
+</code></pre>
+
+<p>Pain: consider yourself eliminated.</p>
+
+<p>Next up, we&#8217;re going to do more with the context type we created, and make
+the guestbook a little more web 2.0. As always, the source to the gostbook
+is up on <a href="http://github.com/zeebo/gostbook">github</a>.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Jeff Wendling</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-08-07T14:13:00-04:00" pubdate data-updated="true">Aug 7<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/go/'>go</a>, <a class='category' href='/blog/categories/tutorial/'>tutorial</a>, <a class='category' href='/blog/categories/web/'>web</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/07/30/quick-and-clean-in-go/" title="Previous Post: Quick and Clean in Go">&laquo; Quick and Clean in Go</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/08/07/painless-web-handlers-in-go/">Painless Web Handlers in Go</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/07/30/quick-and-clean-in-go/">Quick and Clean in Go</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/zeebo">@zeebo</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'zeebo',
+            count: 5,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/102519007305888927546?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2012 - Jeff Wendling -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'shadynastybiz';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://shadynasty.biz/blog/2012/08/07/painless-web-handlers-in-go/';
+        var disqus_url = 'http://shadynasty.biz/blog/2012/08/07/painless-web-handlers-in-go/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
