@@ -310,8 +310,8 @@ func reverse(name string, things ...interface{}) string {
 We choose to have the function panic on errors because any incorrect reversal
 is a programmer error. We also accept a variadic number of interface values because
 sometimes we need to have a parameter in the reversal that is an integer, like the
-year on the blog post url, and the URL function takes strings. So rather than force
-the template to do the conversion, or the function executing the template, we
+year on the blog post url, and the [URL function][gorilla/mux.Route.URL] takes strings.
+So rather than force the template to do the conversion, or the function executing the template, we
 just convert everything to a string by calling `fmt.Sprint` on it. Then we have
 to add this function to the template.
 
@@ -357,4 +357,5 @@ is up on [github][gostbook].
 [quick]: http://shadynasty.biz/blog/2012/07/30/quick-and-clean-in-go/
 [gorilla]: http://gorilla-web.appspot.com
 [gorilla/pat]: http://gorilla-web.appspot.com/pkg/pat
+[gorilla/mux.Route.URL]: http://gorilla-web.appspot.com/pkg/mux#Route.URL
 [gostbook]: http://github.com/zeebo/gostbook
