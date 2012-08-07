@@ -1,22 +1,23 @@
 ---
 layout: post
-title: "Sessions in Go"
-date: 2012-08-04 14:13
+title: "Painless Web Handlers in Go"
+date: 2012-08-07 14:13
 comments: true
-categories: 
+categories: [go, web, tutorial]
 ---
 
-One topic I find people might have some trouble with when
-it comes to web dev in Go is using sessions. To that end
-I decided I would add a user system to the [gostbook][gostbook]
-we wrote [last time][quickandclean]. Lets do it!
+[Last time][quick] we made a little guestbook application, but there was a
+couple little pain points. We had to have some boiler plate at the top of
+all of the handlers, and errors were handled by copying the same line of code
+everywhere. We also had fixed url paths hard coded in handlers and templates.
+Let's see how we can fix that.
 
 <!-- more -->
 
-## Some cleanup
+## Adding context
 
-First, I think we should deal with the pain points [identified][pain] last
-time. Let's start by cleaning up some boiler plate. How we do this is by
+A lot of the boiler plate in the handlers last time had to do with the database
+for each request, so let's start by cleaning that up. How we do this is by
 creating a type that will have the context for the request.
 
 {% codeblock context.go %}
@@ -205,9 +206,9 @@ Much better! Let's commit that.
 The other pain points, hard coded urls, and checking the request method,
 are going to be handled by more advanced routing. For this, we're going
 to use the execllent [gorilla web toolkit][gorilla], specifically the
-[gorilla/pat][gorrila/pat] package. I really like the simple API it provides
-with easy parameter capturing from the url. It's almost a drop in replacement
-for `net/http`:
+[gorilla/pat][gorilla/pat] package. I really like the simple API it provides
+with easy parameter capturing from the url. It's very easy to use with the
+`net/http` package:
 
 {% codeblock main.go %}
 func main() {
@@ -347,6 +348,13 @@ Let's update the `sign` handler to use the reverse function too.
 
 	http.Redirect(w, req, reverse("index"), http.StatusSeeOther)
 
-Pain: eliminated.
+Pain: consider yourself eliminated.
 
-## Sessions
+Next up, we're going to do more with the context type we created, and make
+the guestbook a little more web 2.0. As always, the source to the gostbook
+is up on [github][gostbook].
+
+[quick]: http://shadynasty.biz/blog/2012/07/30/quick-and-clean-in-go/
+[gorilla]: http://gorilla-web.appspot.com
+[gorilla/pat]: http://gorilla-web.appspot.com/pkg/pat
+[gostbook]: http://github.com/zeebo/gostbook
