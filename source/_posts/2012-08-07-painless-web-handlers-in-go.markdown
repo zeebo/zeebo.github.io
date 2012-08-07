@@ -323,7 +323,8 @@ var funcs = template.FuncMap{
 func parseTemplate(files ...string) *template.Template {
 	//create a new template named after the first file in the list and add
 	//the function map to it
-	t := template.New(files[0]).Funcs(funcs)
+	name := filepath.Base(files[0])
+	t := template.New(name).Funcs(funcs)
 
 	//parse the files into the template and panic on errors
 	t = template.Must(t.ParseFiles(files...))
