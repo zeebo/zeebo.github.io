@@ -1,0 +1,480 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Template Usage and Internals - Shadynasty Business</title>
+  <meta name="author" content="Jeff Wendling">
+
+  
+  <meta name="description" content="I&#8217;ve seen many tutorials on the internet about how to use templates in Go. They
+typically concentrate on the syntax of the template and don&# &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://shadynasty.biz/blog/2012/08/18/template-usage-and-internals/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Shadynasty Business" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Shadynasty Business</a></h1>
+  
+    <h2>That's Sha-Dynasty</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:shadynasty.biz" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Template Usage and Internals</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-08-18T11:51:00-04:00" pubdate data-updated="true">Aug 18<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>I&#8217;ve seen many tutorials on the internet about how to use templates in Go. They
+typically concentrate on the syntax of the template and don&#8217;t go in to the details
+of how they&#8217;re constructed and used in Go code. That&#8217;s why this article is about
+what a template really is, and how to use them in your code.</p>
+
+<!-- more -->
+
+
+<h2>A little history</h2>
+
+<p>Back before Go 1, the <a href="http://golang.org/pkg/text/template">text/template</a> package was different.
+The real major difference was the package defined two major types: a template
+and a template set. At some point the library authors decided to merge them into
+one, the <a href="http://golang.org/pkg/text/template/#Template">Template</a> type.</p>
+
+<h2>So what is a template?</h2>
+
+<p>I like to think of a template as a collection of templates, with one promoted
+as the &#8220;default&#8221; template. The default template is the one that gets used when
+the execute method is called. Internally, a template contains a map of all the
+other templates it is linked with, and each one of those templates contains
+the same map. This makes the namespace of a template flat. It sounds really
+confusing, so hopefully we can make it easier with some examples and implications.</p>
+
+<h2>Implications</h2>
+
+<p>So given that a template is really a set of templates with a mapping of all the
+template names in the set to the templates (phew), what can we expect in how
+we work with it?</p>
+
+<ul>
+<li><p><strong>Every template in the set can be called by any other.</strong> Because every template
+shares the same map of name to templates, any template can call any other templates.
+This is a pretty simple.</p></li>
+<li><p><strong>You can&#8217;t have two templates with the same name.</strong> This is also pretty obvious
+but bears stating. Because the namespace is flat, two template with the same name
+would cause a collision. The package doesn&#8217;t allow you to add a template to a set
+under a name that already exists.</p></li>
+<li><p><strong>Theres no such thing as a subtemplate.</strong> Because the namespace is flat, you can&#8217;t
+really have one template be a subtemplate of another. Because every template is accessible
+from every other template, the concept of one template owning another isn&#8217;t really
+defined. This isn&#8217;t to say you can&#8217;t use templates like subtemplates, its just that
+theres no mechanism enforcing this in the package.</p></li>
+<li><p><strong>Lookup is idempotent.</strong> This means that calling <code>t.Lookup("name").Lookup("name")</code>
+is the same as <code>t.Lookup("name")</code>, as long as <code>"name"</code> exists in the template. This
+is because every template shares the same map of template name to template. When we
+lookup a specific one, it still has the same map to lookup the next one. This is
+a handy property because it makes it always safe to call Lookup regardless of the
+current state of the template.</p></li>
+</ul>
+
+
+<h2>Gotchas</h2>
+
+<p>Here&#8217;s some common problems with the template package that people run into:</p>
+
+<ul>
+<li><p><strong>ParseFiles and its friends add the template under the name of the file.</strong> This means
+if you do <code>template.New("base").ParseFiles("foo.html")</code> and try to execute it, you will
+have an empty template. The template was read and parsed from &#8220;foo.html&#8221; and added to the
+template under that name. This means you have to either do a <code>.Lookup("foo.html")</code> or
+change the name in New to &#8220;foo.html&#8221;.</p></li>
+<li><p><strong>Not just the name of the file, the basename of the file.</strong> This means if you
+try to do <code>.ParseFiles("a/main.html", "b/main.html")</code> you&#8217;ll run into problems
+because the two files share the same basename. It returns an error saying that
+you can&#8217;t redefine the template named &#8220;main.html&#8221;.</p></li>
+<li><p><strong>Functions must be added before parsing.</strong> During parse time, the template package
+needs to know all the identifiers that could be used to parse a template correctly.
+This means that you need to set the function map before you do any parsing.
+This can make the code a little longer, especially when you start with
+a simple <code>template.ParseFiles</code> and need to add functions to it.</p></li>
+</ul>
+
+
+<h2>Quiz time</h2>
+
+<p>Now that we know more about how templates work and some common gotchas, lets look
+at some code and have a quiz. Here&#8217;s how the quiz works: I&#8217;ll show you a piece
+of sample code consisting of some files, and you tell me the output.
+The answers are at the bottom of this post.</p>
+
+<h3>Question 1</h3>
+
+<figure class='code'><figcaption><span>main.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">import</span> <span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;text/template&quot;</span>
+</span><span class='line'>  <span class="s">&quot;os&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">t</span> <span class="p">:=</span> <span class="n">template</span><span class="p">.</span><span class="n">Must</span><span class="p">(</span><span class="n">template</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="s">&quot;foo&quot;</span><span class="p">).</span><span class="n">ParseFiles</span><span class="p">(</span><span class="s">&quot;main.html&quot;</span><span class="p">))</span>
+</span><span class='line'>  <span class="n">t</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">Stdout</span><span class="p">,</span> <span class="n">nil</span><span class="p">)</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>main.html </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'>Hello World!
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Question 2</h3>
+
+<figure class='code'><figcaption><span>main.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">import</span> <span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;text/template&quot;</span>
+</span><span class='line'>  <span class="s">&quot;os&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">t</span> <span class="p">:=</span> <span class="n">template</span><span class="p">.</span><span class="n">Must</span><span class="p">(</span><span class="n">template</span><span class="p">.</span><span class="n">ParseFiles</span><span class="p">(</span><span class="s">&quot;main.html&quot;</span><span class="p">,</span> <span class="s">&quot;sub.html&quot;</span><span class="p">))</span>
+</span><span class='line'>  <span class="n">t</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">Stdout</span><span class="p">,</span> <span class="n">nil</span><span class="p">)</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>main.html </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'>{{ template &quot;sub.html&quot; }}
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>sub.html </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'>Hello World!
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Question 3</h3>
+
+<figure class='code'><figcaption><span>main.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">import</span> <span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;text/template&quot;</span>
+</span><span class='line'>  <span class="s">&quot;os&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">greet</span><span class="p">()</span> <span class="nb">string</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="s">&quot;Hello World!&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">t</span> <span class="p">:=</span> <span class="n">template</span><span class="p">.</span><span class="n">Must</span><span class="p">(</span><span class="n">template</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="s">&quot;foo&quot;</span><span class="p">).</span><span class="n">Parse</span><span class="p">(</span><span class="s">`{{ greet }}`</span><span class="p">))</span>
+</span><span class='line'>  <span class="n">t</span><span class="p">.</span><span class="n">Funcs</span><span class="p">(</span><span class="n">template</span><span class="p">.</span><span class="n">FuncMap</span><span class="p">{</span>
+</span><span class='line'>      <span class="s">&quot;greet&quot;</span><span class="p">:</span> <span class="n">greet</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'>  <span class="n">t</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">Stdout</span><span class="p">,</span> <span class="n">nil</span><span class="p">)</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Answers</h2>
+
+<ul>
+<li><p><em>Question 1</em>: Nothing. The &#8220;foo&#8221; template is the &#8220;active&#8221; template and it&#8217;s
+empty. Did you read the Gotchas?</p></li>
+<li><p><em>Question 2</em>: &#8220;Hello World!&#8221;. Nothing tricky about this one. Interesting fact:
+if we reversed the order of the parsed files it would be the same output, even though
+it does something totally different. <em>(Why?)</em></p></li>
+<li><p><em>Question 3</em>: A panic. We don&#8217;t have the functions in the template at the time of
+the parsing, so an error is returned and <code>Must</code> causes a panic. This is Gotcha number 3.</p></li>
+</ul>
+
+
+<h2>Conclusion</h2>
+
+<p>So how did you do? I admit, some of the questions were tricks and subtle so it&#8217;s
+ok if you got some (all) of them wrong, but all of them were inspired by common
+problems I&#8217;ve seen people have. Templates are actually pretty simple, but they
+have some non-obvious properties that require some care in how they are created
+and used in your code.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Jeff Wendling</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-08-18T11:51:00-04:00" pubdate data-updated="true">Aug 18<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/go/'>go</a>, <a class='category' href='/blog/categories/templates/'>templates</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/08/07/painless-web-handlers-in-go/" title="Previous Post: Painless Web Handlers in Go">&laquo; Painless Web Handlers in Go</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/08/18/template-usage-and-internals/">Template Usage and Internals</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/08/07/painless-web-handlers-in-go/">Painless Web Handlers in Go</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/07/30/quick-and-clean-in-go/">Quick and Clean in Go</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/zeebo">@zeebo</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'zeebo',
+            count: 5,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+<section class="googleplus">
+  <h1>
+    <a href="https://plus.google.com/102519007305888927546?rel=author">
+      <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+      Google+
+    </a>
+  </h1>
+</section>
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2012 - Jeff Wendling -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'shadynastybiz';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://shadynasty.biz/blog/2012/08/18/template-usage-and-internals/';
+        var disqus_url = 'http://shadynasty.biz/blog/2012/08/18/template-usage-and-internals/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
