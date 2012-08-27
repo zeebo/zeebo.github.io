@@ -97,7 +97,9 @@ import (
 
 func main() {
 	t := template.Must(template.New("foo").ParseFiles("main.html"))
-	t.Execute(os.Stdout, nil)
+	if err := t.Execute(os.Stdout, nil); err != nil {
+		panic(err)
+	}
 }
 {% endcodeblock %}
 
@@ -117,7 +119,9 @@ import (
 
 func main() {
 	t := template.Must(template.ParseFiles("main.html", "sub.html"))
-	t.Execute(os.Stdout, nil)
+	if err := t.Execute(os.Stdout, nil); err != nil {
+		panic(err)
+	}
 }
 {% endcodeblock %}
 
@@ -148,7 +152,9 @@ func main() {
 	t.Funcs(template.FuncMap{
 		"greet": greet,
 	})
-	t.Execute(os.Stdout, nil)
+	if err := t.Execute(os.Stdout, nil); err != nil {
+		panic(err)
+	}
 }
 {% endcodeblock %}
 
