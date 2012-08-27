@@ -4,7 +4,7 @@
   <title><![CDATA[Shadynasty Business]]></title>
   <link href="http://shadynasty.biz/atom.xml" rel="self"/>
   <link href="http://shadynasty.biz/"/>
-  <updated>2012-08-18T10:32:45-04:00</updated>
+  <updated>2012-08-27T07:24:38-04:00</updated>
   <id>http://shadynasty.biz/</id>
   <author>
     <name><![CDATA[Jeff Wendling]]></name>
@@ -113,6 +113,8 @@ The answers are at the bottom of this post.</p>
 <span class='line-number'>9</span>
 <span class='line-number'>10</span>
 <span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
 </pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
 </span><span class='line'>
 </span><span class='line'><span class="k">import</span> <span class="p">(</span>
@@ -122,7 +124,9 @@ The answers are at the bottom of this post.</p>
 </span><span class='line'>
 </span><span class='line'><span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
 </span><span class='line'>  <span class="n">t</span> <span class="p">:=</span> <span class="n">template</span><span class="p">.</span><span class="n">Must</span><span class="p">(</span><span class="n">template</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="s">&quot;foo&quot;</span><span class="p">).</span><span class="n">ParseFiles</span><span class="p">(</span><span class="s">&quot;main.html&quot;</span><span class="p">))</span>
-</span><span class='line'>  <span class="n">t</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">Stdout</span><span class="p">,</span> <span class="n">nil</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">t</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">Stdout</span><span class="p">,</span> <span class="n">nil</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">panic</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
@@ -149,6 +153,8 @@ The answers are at the bottom of this post.</p>
 <span class='line-number'>9</span>
 <span class='line-number'>10</span>
 <span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
 </pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
 </span><span class='line'>
 </span><span class='line'><span class="k">import</span> <span class="p">(</span>
@@ -158,7 +164,9 @@ The answers are at the bottom of this post.</p>
 </span><span class='line'>
 </span><span class='line'><span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
 </span><span class='line'>  <span class="n">t</span> <span class="p">:=</span> <span class="n">template</span><span class="p">.</span><span class="n">Must</span><span class="p">(</span><span class="n">template</span><span class="p">.</span><span class="n">ParseFiles</span><span class="p">(</span><span class="s">&quot;main.html&quot;</span><span class="p">,</span> <span class="s">&quot;sub.html&quot;</span><span class="p">))</span>
-</span><span class='line'>  <span class="n">t</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">Stdout</span><span class="p">,</span> <span class="n">nil</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">t</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">Stdout</span><span class="p">,</span> <span class="n">nil</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">panic</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
@@ -200,6 +208,8 @@ The answers are at the bottom of this post.</p>
 <span class='line-number'>16</span>
 <span class='line-number'>17</span>
 <span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
 </pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
 </span><span class='line'>
 </span><span class='line'><span class="k">import</span> <span class="p">(</span>
@@ -216,7 +226,9 @@ The answers are at the bottom of this post.</p>
 </span><span class='line'>  <span class="n">t</span><span class="p">.</span><span class="n">Funcs</span><span class="p">(</span><span class="n">template</span><span class="p">.</span><span class="n">FuncMap</span><span class="p">{</span>
 </span><span class='line'>      <span class="s">&quot;greet&quot;</span><span class="p">:</span> <span class="n">greet</span><span class="p">,</span>
 </span><span class='line'>  <span class="p">})</span>
-</span><span class='line'>  <span class="n">t</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">Stdout</span><span class="p">,</span> <span class="n">nil</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">t</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">Stdout</span><span class="p">,</span> <span class="n">nil</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">panic</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
