@@ -4,7 +4,7 @@
   <title><![CDATA[Shadynasty Business]]></title>
   <link href="http://shadynasty.biz/atom.xml" rel="self"/>
   <link href="http://shadynasty.biz/"/>
-  <updated>2012-08-27T07:24:38-04:00</updated>
+  <updated>2012-09-05T16:39:58-04:00</updated>
   <id>http://shadynasty.biz/</id>
   <author>
     <name><![CDATA[Jeff Wendling]]></name>
@@ -12,6 +12,668 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Auth and Sessions]]></title>
+    <link href="http://shadynasty.biz/blog/2012/09/05/auth-and-sessions/"/>
+    <updated>2012-09-05T16:10:00-04:00</updated>
+    <id>http://shadynasty.biz/blog/2012/09/05/auth-and-sessions</id>
+    <content type="html"><![CDATA[<p>I think it&#8217;s time to bring the guestbook to the next level, and that means users
+and sessions. This post will show you how to handle user registration and authentication.
+Let&#8217;s get started!</p>
+
+<!-- more -->
+
+
+<h2>The User Type</h2>
+
+<p>The first thing we&#8217;re going to do is create a type to store the information of
+the user. So what do users have? Well, an ID to identify them in the database,
+a username, and a password. To make this a little more fun, we&#8217;re also going to
+store the number of times they&#8217;ve posted on the guestbook. So here&#8217;s our type:</p>
+
+<figure class='code'><figcaption><span>user.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">import</span> <span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;code.google.com/p/go.crypto/bcrypt&quot;</span>
+</span><span class='line'>  <span class="s">&quot;labix.org/v2/mgo/bson&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">type</span> <span class="n">User</span> <span class="k">struct</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">ID</span>       <span class="n">bson</span><span class="p">.</span><span class="n">ObjectId</span> <span class="s">`bson:&quot;_id,omitempty&quot;`</span>
+</span><span class='line'>  <span class="n">Username</span> <span class="nb">string</span>
+</span><span class='line'>  <span class="n">Password</span> <span class="p">[]</span><span class="nb">byte</span>
+</span><span class='line'>  <span class="n">Posts</span>    <span class="nb">int</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now lets define some functions to help hash the password and set it on the user
+and and authenticate a user given a username and password.</p>
+
+<figure class='code'><figcaption><span>user.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="c1">//SetPassword takes a plaintext password and hashes it with bcrypt and sets the</span>
+</span><span class='line'><span class="c1">//password field to the hash.</span>
+</span><span class='line'><span class="k">func</span> <span class="p">(</span><span class="n">u</span> <span class="p">*</span><span class="n">User</span><span class="p">)</span> <span class="n">SetPassword</span><span class="p">(</span><span class="n">password</span> <span class="nb">string</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">hpass</span><span class="p">,</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">bcrypt</span><span class="p">.</span><span class="n">GenerateFromPassword</span><span class="p">([]</span><span class="nb">byte</span><span class="p">(</span><span class="n">password</span><span class="p">),</span> <span class="n">bcrypt</span><span class="p">.</span><span class="n">DefaultCost</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">panic</span><span class="p">(</span><span class="n">err</span><span class="p">)</span> <span class="c1">//this is a panic because bcrypt errors on invalid costs</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="n">u</span><span class="p">.</span><span class="n">Password</span> <span class="p">=</span> <span class="n">hpass</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//Login validates and returns a user object if they exist in the database.</span>
+</span><span class='line'><span class="k">func</span> <span class="n">Login</span><span class="p">(</span><span class="n">ctx</span> <span class="p">*</span><span class="n">Context</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span> <span class="nb">string</span><span class="p">)</span> <span class="p">(</span><span class="n">u</span> <span class="p">*</span><span class="n">User</span><span class="p">,</span> <span class="n">err</span> <span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">err</span> <span class="p">=</span> <span class="n">ctx</span><span class="p">.</span><span class="n">C</span><span class="p">(</span><span class="s">&quot;users&quot;</span><span class="p">).</span><span class="n">Find</span><span class="p">(</span><span class="n">bson</span><span class="p">.</span><span class="n">M</span><span class="p">{</span><span class="s">&quot;username&quot;</span><span class="p">:</span> <span class="n">username</span><span class="p">}).</span><span class="n">One</span><span class="p">(&amp;</span><span class="n">u</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">err</span> <span class="p">=</span> <span class="n">bcrypt</span><span class="p">.</span><span class="n">CompareHashAndPassword</span><span class="p">(</span><span class="n">u</span><span class="p">.</span><span class="n">Password</span><span class="p">,</span> <span class="p">[]</span><span class="nb">byte</span><span class="p">(</span><span class="n">password</span><span class="p">))</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">u</span> <span class="p">=</span> <span class="n">nil</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">return</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now lets work on the handler to log them in.</p>
+
+<h2>First Sign of Trouble</h2>
+
+<p>The login handler should be pretty simple. All we have to do is get the username
+and password from the form POSTed to the handler, and pass it to our Login function
+which will grab the user from the database and authenticate the credentials.</p>
+
+<figure class='code'><figcaption><span>handlers.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">func</span> <span class="n">login</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">ctx</span> <span class="p">*</span><span class="n">Context</span><span class="p">)</span> <span class="p">(</span><span class="n">err</span> <span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//grab the username and password from the form</span>
+</span><span class='line'>  <span class="n">username</span><span class="p">,</span> <span class="n">password</span> <span class="p">:=</span> <span class="n">req</span><span class="p">.</span><span class="n">FormValue</span><span class="p">(</span><span class="s">&quot;username&quot;</span><span class="p">),</span> <span class="n">req</span><span class="p">.</span><span class="n">FormValue</span><span class="p">(</span><span class="s">&quot;password&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//log in the user</span>
+</span><span class='line'>  <span class="n">user</span><span class="p">,</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">Login</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//what to do now? if there was an error we want to present the form again</span>
+</span><span class='line'>  <span class="c1">//with some error message.</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//where do we store the user if the login was valid?</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//answer: sessions!</span>
+</span><span class='line'>  <span class="n">_</span> <span class="p">=</span> <span class="n">user</span>
+</span><span class='line'>  <span class="k">return</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>But we ran into some trouble. When should we display the template for the form?
+Where do we store that the authentication was correct? Fortunately it&#8217;s not too
+hard to fix these problems. Lets handle the displaying of the template part first.</p>
+
+<h2>Two Handlers Are Better Than One</h2>
+
+<p>The login handler is really two actions. When a GET request is passed to the handler
+it should display a nice form, but when a POST request is passed to the handler
+it should authenticate a user. These different actions based on the verb used
+on the URL means we should dispatch to the correct handler in the router rather
+than the handler itself. Lets write the simple form displaying template first.</p>
+
+<figure class='code'><figcaption><span>handlers.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">var</span> <span class="n">login</span> <span class="p">=</span> <span class="n">parseTemplate</span><span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;templates/_base.html&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s">&quot;templates/login.html&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">loginForm</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">ctx</span> <span class="p">*</span><span class="n">Context</span><span class="p">)</span> <span class="p">(</span><span class="n">err</span> <span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">err</span> <span class="p">=</span> <span class="n">login</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">nil</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The code was getting &#8220;smelly&#8221; because it wasn&#8217;t nice to have global variables storing
+the templates, so it wasn&#8217;t too hard to whip up a simple function to compile templates
+and cache them on the fly. Here&#8217;s what that looks like, and the new handler using it:</p>
+
+<figure class='code'><figcaption><span>template.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">import</span> <span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;html/template&quot;</span>
+</span><span class='line'>  <span class="s">&quot;path/filepath&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">var</span> <span class="n">cachedTemplates</span> <span class="p">=</span> <span class="k">map</span><span class="p">[</span><span class="nb">string</span><span class="p">]*</span><span class="n">template</span><span class="p">.</span><span class="n">Template</span><span class="p">{}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">var</span> <span class="n">funcs</span> <span class="p">=</span> <span class="n">template</span><span class="p">.</span><span class="n">FuncMap</span><span class="p">{</span>
+</span><span class='line'>  <span class="s">&quot;reverse&quot;</span><span class="p">:</span> <span class="n">reverse</span><span class="p">,</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">T</span><span class="p">(</span><span class="n">name</span> <span class="nb">string</span><span class="p">)</span> <span class="p">*</span><span class="n">template</span><span class="p">.</span><span class="n">Template</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">t</span><span class="p">,</span> <span class="n">ok</span> <span class="p">:=</span> <span class="n">cachedTemplates</span><span class="p">[</span><span class="n">name</span><span class="p">];</span> <span class="n">ok</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">t</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">t</span> <span class="p">:=</span> <span class="n">template</span><span class="p">.</span><span class="n">New</span><span class="p">(</span><span class="s">&quot;_base.html&quot;</span><span class="p">).</span><span class="n">Funcs</span><span class="p">(</span><span class="n">funcs</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">t</span> <span class="p">=</span> <span class="n">template</span><span class="p">.</span><span class="n">Must</span><span class="p">(</span><span class="n">t</span><span class="p">.</span><span class="n">ParseFiles</span><span class="p">(</span>
+</span><span class='line'>      <span class="s">&quot;templates/_base.html&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="n">filepath</span><span class="p">.</span><span class="n">Join</span><span class="p">(</span><span class="s">&quot;templates&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span>
+</span><span class='line'>  <span class="p">))</span>
+</span><span class='line'>  <span class="n">cachedTemplates</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="p">=</span> <span class="n">t</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="n">t</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>handlers.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">func</span> <span class="n">loginForm</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">ctx</span> <span class="p">*</span><span class="n">Context</span><span class="p">)</span> <span class="p">(</span><span class="n">err</span> <span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">T</span><span class="p">(</span><span class="s">&quot;login.html&quot;</span><span class="p">).</span><span class="n">Execute</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">nil</span><span class="p">)</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Login Template </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{{ define "title" }}Guestbook - Login{{ end }}
+</span><span class='line'>
+</span><span class='line'>{{ define "content" }}
+</span><span class='line'>    &lt;h1>Login&lt;/h1>
+</span><span class='line'>    &lt;form action="{{ reverse "login" }}" method="POST">
+</span><span class='line'>        &lt;p>Username: &lt;input type="text" name="username">&lt;/p>
+</span><span class='line'>        &lt;p>Password: &lt;input type="password" name="password">&lt;/p>
+</span><span class='line'>        &lt;p>&lt;button>Login&lt;/button>&lt;/p>
+</span><span class='line'>    &lt;/form>
+</span><span class='line'>{{ end }}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>At this point I had a working login page that would 404 when you clicked Login.
+There were some smaller changes made around to clean things up that you can see
+in <a href="https://github.com/zeebo/gostbook/commit/50d85a72495ac676db9301df45f84ca1cbf96702">this commit</a> (I have annotated the commit to include
+some comments on the changes.) Let&#8217;s add the login form handling now.</p>
+
+<h2>Sessions</h2>
+
+<p>A session is just some data attached to some id that you hand the client in a cookie.
+This way when a client requests a page, you can look at the cookie value and get the
+id for the data and load up the data for that request. Tada! Sessions! For our
+implementation of sessions, we&#8217;re once again going to use the excellent
+<a href="http://gorilla-web.appspot.com/pkg/sessions">gorilla</a> package for sessions. It lets you use different stores
+for the backend data, and in this case we&#8217;re just going to use a <a href="http://gorilla-web.appspot.com/pkg/sessions#CookieStore">cookie store</a>.
+This stores all the data in the cookie the client sends to you. This does mean
+that the user can tamper with the cookie, but the data is verified using a secret
+value and a hash, and can optionally be encrypted with another secret value. For this
+I&#8217;m just going to use a store that doesn&#8217;t encrypt the data: after all, the data
+the store uses is open source.</p>
+
+<figure class='code'><figcaption><span>main.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">import</span> <span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;code.google.com/p/gorilla/sessions&quot;</span>
+</span><span class='line'>  <span class="c1">//...</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">var</span> <span class="n">store</span> <span class="n">sessions</span><span class="p">.</span><span class="n">Store</span>
+</span><span class='line'><span class="c1">//...</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//...</span>
+</span><span class='line'>  <span class="n">store</span> <span class="p">=</span> <span class="n">sessions</span><span class="p">.</span><span class="n">NewCookieStore</span><span class="p">([]</span><span class="nb">byte</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">Getenv</span><span class="p">(</span><span class="s">&quot;KEY&quot;</span><span class="p">)))</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So we defined a cookie store, now let&#8217;s add grabbing the session to the context.</p>
+
+<figure class='code'><figcaption><span>context.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">type</span> <span class="n">Context</span> <span class="k">struct</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">Database</span> <span class="p">*</span><span class="n">mgo</span><span class="p">.</span><span class="n">Database</span>
+</span><span class='line'>  <span class="n">Session</span>  <span class="p">*</span><span class="n">sessions</span><span class="p">.</span><span class="n">Session</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">NewContext</span><span class="p">(</span><span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">)</span> <span class="p">(*</span><span class="n">Context</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">sess</span><span class="p">,</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">store</span><span class="p">.</span><span class="n">Get</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="s">&quot;gostbook&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">&amp;</span><span class="n">Context</span><span class="p">{</span>
+</span><span class='line'>      <span class="n">Database</span><span class="p">:</span> <span class="n">session</span><span class="p">.</span><span class="n">Clone</span><span class="p">().</span><span class="n">DB</span><span class="p">(</span><span class="n">database</span><span class="p">),</span>
+</span><span class='line'>      <span class="n">Session</span><span class="p">:</span>  <span class="n">sess</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">},</span> <span class="n">err</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The last thing we need to do is make sure the handlers save the session when they&#8217;re
+done with it. Unfortunately this causes a problem. Saving the session requires
+modifying the headers of the response, and if the handler has already started
+outputting data, the headers have already been sent and that ship has sailed.
+Theres two approaches to solving this problem. The first is to just make sure
+in each handler to save the session before writing anything to the <code>ResponseWriter</code>,
+which can be a little verbose and error prone but provides the best performance.
+The second is to use the fact that a <code>ResponseWriter</code> is an interface and use our
+handler type to substitute in a buffered <code>ResponseWriter</code> that stores all the data
+and header information written to it, so that it can be output at the end all at once.
+I wrote a package to help with the second option so it&#8217;s clearly the one I prefer.
+Here&#8217;s how we can hook that up:</p>
+
+<figure class='code'><figcaption><span>http.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">package</span> <span class="n">main</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">import</span> <span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;net/http&quot;</span>
+</span><span class='line'>  <span class="s">&quot;thegoods.biz/httpbuf&quot;</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">type</span> <span class="n">handler</span> <span class="k">func</span><span class="p">(</span><span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">,</span> <span class="p">*</span><span class="n">Context</span><span class="p">)</span> <span class="n">error</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="p">(</span><span class="n">h</span> <span class="n">handler</span><span class="p">)</span> <span class="n">ServeHTTP</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//create the context</span>
+</span><span class='line'>  <span class="n">ctx</span><span class="p">,</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">NewContext</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">defer</span> <span class="n">ctx</span><span class="p">.</span><span class="n">Close</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//run the handler and grab the error, and report it</span>
+</span><span class='line'>  <span class="n">buf</span> <span class="p">:=</span> <span class="nb">new</span><span class="p">(</span><span class="n">httpbuf</span><span class="p">.</span><span class="n">Buffer</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">err</span> <span class="p">=</span> <span class="n">h</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//save the session</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">=</span> <span class="n">ctx</span><span class="p">.</span><span class="n">Session</span><span class="p">.</span><span class="n">Save</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">http</span><span class="p">.</span><span class="n">Error</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">err</span><span class="p">.</span><span class="n">Error</span><span class="p">(),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusInternalServerError</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//apply the buffered response to the writer</span>
+</span><span class='line'>  <span class="n">buf</span><span class="p">.</span><span class="n">Apply</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>All we do is create an <code>httpbuf.Buffer</code> and use that as our handler, finishing
+with a call to its Apply method. With that, we can set and grab session values
+in the handlers by just interacting with <code>ctx.Session</code>, and everthing will be
+saved when <a href="https://github.com/zeebo/gostbook/commit/85b30a6efb917ab8567d3d277d5373b3e12a7f67">we&#8217;re done</a>.</p>
+
+<h2>Back to Authentication</h2>
+
+<p>Now that we have sessions, we know where we can store the user. Lets write the
+login handler for the user then.</p>
+
+<figure class='code'><figcaption><span>handlers.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">func</span> <span class="n">login</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">ctx</span> <span class="p">*</span><span class="n">Context</span><span class="p">)</span> <span class="n">error</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">username</span><span class="p">,</span> <span class="n">password</span> <span class="p">:=</span> <span class="n">req</span><span class="p">.</span><span class="n">FormValue</span><span class="p">(</span><span class="s">&quot;username&quot;</span><span class="p">),</span> <span class="n">req</span><span class="p">.</span><span class="n">FormValue</span><span class="p">(</span><span class="s">&quot;password&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">user</span><span class="p">,</span> <span class="n">e</span> <span class="p">:=</span> <span class="n">Login</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">e</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">ctx</span><span class="p">.</span><span class="n">Session</span><span class="p">.</span><span class="n">AddFlash</span><span class="p">(</span><span class="s">&quot;Invalid Username/Password&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">loginForm</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//store the user id in the values and redirect to index</span>
+</span><span class='line'>  <span class="n">ctx</span><span class="p">.</span><span class="n">Session</span><span class="p">.</span><span class="n">Values</span><span class="p">[</span><span class="s">&quot;user&quot;</span><span class="p">]</span> <span class="p">=</span> <span class="n">user</span><span class="p">.</span><span class="n">ID</span>
+</span><span class='line'>  <span class="n">http</span><span class="p">.</span><span class="n">Redirect</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">reverse</span><span class="p">(</span><span class="s">&quot;index&quot;</span><span class="p">),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusSeeOther</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">nil</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>main.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">import</span> <span class="p">(</span>
+</span><span class='line'>  <span class="s">&quot;encoding/gob&quot;</span>
+</span><span class='line'>  <span class="s">&quot;labix.org/v2/mgo/bson&quot;</span>
+</span><span class='line'>  <span class="c1">//...</span>
+</span><span class='line'><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">init</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">gob</span><span class="p">.</span><span class="n">Register</span><span class="p">(</span><span class="n">bson</span><span class="p">.</span><span class="n">ObjectId</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">))</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">//...</span>
+</span><span class='line'>  <span class="n">router</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;POST&quot;</span><span class="p">,</span> <span class="s">&quot;/login&quot;</span><span class="p">,</span> <span class="n">handler</span><span class="p">(</span><span class="n">login</span><span class="p">))</span>
+</span><span class='line'>  <span class="c1">//...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Note that we have to register the <code>bson.ObjectId</code> type with the <a href="http://golang.org/pkg/encoding/gob">gob package</a>
+because the cookie store uses gob to store the data for the session.</p>
+
+<p>Well, now we log in people and store it in the session, but it&#8217;d be nice if that
+was reflected somehow in the user interface and if the context included information
+about the logged in user. Lets do some work on the context and handlers to fix this.
+First, we&#8217;re going to add a <code>*User</code> to the context that gets filled in based on the
+id we stored in the session.</p>
+
+<figure class='code'><figcaption><span>context.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">type</span> <span class="n">Context</span> <span class="k">struct</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">Database</span> <span class="p">*</span><span class="n">mgo</span><span class="p">.</span><span class="n">Database</span>
+</span><span class='line'>  <span class="n">Session</span>  <span class="p">*</span><span class="n">sessions</span><span class="p">.</span><span class="n">Session</span>
+</span><span class='line'>  <span class="n">User</span>     <span class="p">*</span><span class="n">User</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">NewContext</span><span class="p">(</span><span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">)</span> <span class="p">(*</span><span class="n">Context</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">sess</span><span class="p">,</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">store</span><span class="p">.</span><span class="n">Get</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="s">&quot;gostbook&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">ctx</span> <span class="p">:=</span> <span class="p">&amp;</span><span class="n">Context</span><span class="p">{</span>
+</span><span class='line'>      <span class="n">Database</span><span class="p">:</span> <span class="n">session</span><span class="p">.</span><span class="n">Clone</span><span class="p">().</span><span class="n">DB</span><span class="p">(</span><span class="n">database</span><span class="p">),</span>
+</span><span class='line'>      <span class="n">Session</span><span class="p">:</span>  <span class="n">sess</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">err</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//try to fill in the user from the session</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">uid</span><span class="p">,</span> <span class="n">ok</span> <span class="p">:=</span> <span class="n">sess</span><span class="p">.</span><span class="n">Values</span><span class="p">[</span><span class="s">&quot;user&quot;</span><span class="p">].(</span><span class="n">bson</span><span class="p">.</span><span class="n">ObjectId</span><span class="p">);</span> <span class="n">ok</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">err</span> <span class="p">=</span> <span class="n">ctx</span><span class="p">.</span><span class="n">C</span><span class="p">(</span><span class="s">&quot;users&quot;</span><span class="p">).</span><span class="n">Find</span><span class="p">(</span><span class="n">bson</span><span class="p">.</span><span class="n">M</span><span class="p">{</span><span class="s">&quot;_id&quot;</span><span class="p">:</span> <span class="n">uid</span><span class="p">}).</span><span class="n">One</span><span class="p">(&amp;</span><span class="n">ctx</span><span class="p">.</span><span class="n">User</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">err</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we just have to add the context to the value we pass in to templates to be
+executed and hook up the templates. <a href="https://github.com/zeebo/gostbook/commit/7c2ff89f944d78cb51033c3ac5eeedd4ab552126">This commit</a> shows the
+details of that, including adding a logout handler, and fixing some minor issues
+with the code.</p>
+
+<h2>Post Count and Creating Users</h2>
+
+<p>The last two features we need are letting people register and increasing a persons
+post count when they post. Let&#8217;s work on registration first. Registration works
+just like logging in, so we need to create a template and two handlers.</p>
+
+<figure class='code'><figcaption><span>handlers.go </span></figcaption>
+ <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='go'><span class='line'><span class="k">func</span> <span class="n">registerForm</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">ctx</span> <span class="p">*</span><span class="n">Context</span><span class="p">)</span> <span class="p">(</span><span class="n">err</span> <span class="n">error</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">T</span><span class="p">(</span><span class="s">&quot;register.html&quot;</span><span class="p">).</span><span class="n">Execute</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="k">map</span><span class="p">[</span><span class="nb">string</span><span class="p">]</span><span class="k">interface</span><span class="p">{}{</span>
+</span><span class='line'>      <span class="s">&quot;ctx&quot;</span><span class="p">:</span> <span class="n">ctx</span><span class="p">,</span>
+</span><span class='line'>  <span class="p">})</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">func</span> <span class="n">register</span><span class="p">(</span><span class="n">w</span> <span class="n">http</span><span class="p">.</span><span class="n">ResponseWriter</span><span class="p">,</span> <span class="n">req</span> <span class="p">*</span><span class="n">http</span><span class="p">.</span><span class="n">Request</span><span class="p">,</span> <span class="n">ctx</span> <span class="p">*</span><span class="n">Context</span><span class="p">)</span> <span class="n">error</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">username</span><span class="p">,</span> <span class="n">password</span> <span class="p">:=</span> <span class="n">req</span><span class="p">.</span><span class="n">FormValue</span><span class="p">(</span><span class="s">&quot;username&quot;</span><span class="p">),</span> <span class="n">req</span><span class="p">.</span><span class="n">FormValue</span><span class="p">(</span><span class="s">&quot;password&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">u</span> <span class="p">:=</span> <span class="p">&amp;</span><span class="n">User</span><span class="p">{</span>
+</span><span class='line'>      <span class="n">Username</span><span class="p">:</span> <span class="n">username</span><span class="p">,</span>
+</span><span class='line'>      <span class="n">ID</span><span class="p">:</span>       <span class="n">bson</span><span class="p">.</span><span class="n">NewObjectId</span><span class="p">(),</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="n">u</span><span class="p">.</span><span class="n">SetPassword</span><span class="p">(</span><span class="n">password</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="n">err</span> <span class="p">:=</span> <span class="n">ctx</span><span class="p">.</span><span class="n">C</span><span class="p">(</span><span class="s">&quot;users&quot;</span><span class="p">).</span><span class="n">Insert</span><span class="p">(</span><span class="n">u</span><span class="p">);</span> <span class="n">err</span> <span class="p">!=</span> <span class="n">nil</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">ctx</span><span class="p">.</span><span class="n">Session</span><span class="p">.</span><span class="n">AddFlash</span><span class="p">(</span><span class="s">&quot;Problem registering user.&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">registerForm</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">//store the user id in the values and redirect to index</span>
+</span><span class='line'>  <span class="n">ctx</span><span class="p">.</span><span class="n">Session</span><span class="p">.</span><span class="n">Values</span><span class="p">[</span><span class="s">&quot;user&quot;</span><span class="p">]</span> <span class="p">=</span> <span class="n">u</span><span class="p">.</span><span class="n">ID</span>
+</span><span class='line'>  <span class="n">http</span><span class="p">.</span><span class="n">Redirect</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">reverse</span><span class="p">(</span><span class="s">&quot;index&quot;</span><span class="p">),</span> <span class="n">http</span><span class="p">.</span><span class="n">StatusSeeOther</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">nil</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>register.html</code> template is very similar to the login template. If you really
+wan&#8217;t to see it, you can find it at <a href="https://github.com/zeebo/gostbook/commit/46bf28e9f862d083e6a40d813ff3f271bf96a5f1">this commit</a>. Incrementing
+the post count is super simple. In the <code>sign</code> handler, we just add</p>
+
+<pre><code>ctx.C("users").Update(bson.M{"_id": ctx.User.ID}, bson.M{
+    "$inc": bson.M{"posts": 1},
+})
+</code></pre>
+
+<h2>Phew!</h2>
+
+<p>So after all that we have a login/user registration system, and a session tied
+to a context for storing whatever data we want. Hopefully with this guide you can
+extend it to meet the needs of whatever webapp you&#8217;re writing. Thanks for reading
+so far, and be sure to <a href="http://tranquil-refuge-9104.herokuapp.com">register and leave a comment</a> on the gostbook or
+right below if you liked it.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Template Usage and Internals]]></title>
