@@ -1,0 +1,25 @@
+baseURL = "https://zeebo.github.io/"
+languageCode = "en-us"
+theme = "terminal"
+[pagination]
+  pagerSize = 5
+
+[params]
+  contentTypeName = "posts"
+  themeColor = "green"
+  showMenuItems = 0
+  centerTheme = true
+  readingTime = true
+  showLastUpdated = false
+
+[languages]
+  [languages.en]
+    languageName = "English"
+    title = "zeebo"
+    subtitle = ""
+    owner = "Jeff Wendling"
+    keywords = ""
+    copyright = ""
+    readMoreMsg = "Read more"
+    [languages.en.params]
+      logo = {logoText = "zeebo.github.io", logoHomeLink = "/"}
