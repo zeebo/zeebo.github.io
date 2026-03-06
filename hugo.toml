@@ -11,7 +11,6 @@ theme = "terminal"
   centerTheme = true
   readingTime = true
   showLastUpdated = false
-  customCSS = ["css/custom.css"]
 
 [languages]
   [languages.en]
