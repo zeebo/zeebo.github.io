@@ -9,7 +9,7 @@ tags: ["go", "algorithms", "distributed-systems"]
 
 ### Infectious — The Reed-Solomon Forward Error Correcting library for Go
 
-[storj/infectious](https://github.com/storj/infectious) — Reed-Solomon forward error correcting library
+[storj/infectious](https://storj.io/infectious) — Reed-Solomon forward error correcting library
 
 Infectious is a high-performance [forward error correcting](https://en.wikipedia.org/wiki/Forward_error_correction) library for the [Go programming language](https://golang.org/). Error correcting codes in general are widely used for reliability and resilience, and even for decreasing latency and increasing throughput. [Reed-Solomon](https://en.wikipedia.org/wiki/Reed%E2%80%93Solomon_error_correction) specifically is used all the way from QR codes or barcodes to satellite communication and is why scratched CDs and DVDs still work. If you haven't guessed yet, we use Reed-Solomon, too.
 
@@ -49,7 +49,7 @@ if err != nil {
 fmt.Printf("got: %#v\n", string(result))
 ```
 
-If you want to skip straight to the full documentation, please visit http://godoc.org/github.com/storj/infectious
+If you want to skip straight to the full documentation, please visit https://pkg.go.dev/storj.io/infectious
 
 ## A quick refresher on oversampling polynomials
 
@@ -234,7 +234,7 @@ First, you want to import it!
 
 ```go
 import (
-    "github.com/storj/infectious"
+    "storj.io/infectious"
 )
 ```
 
@@ -333,7 +333,7 @@ for _, share := range shares {
 }
 ```
 
-For more information, be sure to check out our complete documentation at http://godoc.org/github.com/storj/infectious
+For more information, be sure to check out our complete documentation at https://pkg.go.dev/storj.io/infectious
 
 ## What's next?
 
