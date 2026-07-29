@@ -5,7 +5,7 @@ draft: false
 tags: ["go", "algorithms", "distributed-systems"]
 ---
 
-*This post written jointly with [JT Olds](https://medium.com/@jtolds).*
+*This post written jointly with [JT Olio](https://www.jtolio.com).*
 
 ### Infectious — The Reed-Solomon Forward Error Correcting library for Go
 
